@@ -42,15 +42,23 @@ public class UiManager : Singleton<UiManager>
     // Camera control component
     private CameraControl cameraControl;
 
-    private LevelManager levelManager;
-
+    private int beforeLooseCounter;
     /// <summary>
     /// Awake this instance.
     /// </summary>
-   protected override void Awake()
+    protected override void Awake()
 	{
         base.Awake();
 		cameraControl = FindObjectOfType<CameraControl>();
+
+
+        beforeLooseCounter = 1;
+
+        SetDefeatAttempts(beforeLooseCounter);
+
+        XEventBus.Instance.Register(EventId.CurrencyChanged, OnCurrencyChanged);
+        XEventBus.Instance.Register(EventId.Captured, Captured);
+        XEventBus.Instance.Register(EventId.GameResult, GameResult);
     }
  
     /// <summary>
@@ -58,12 +66,6 @@ public class UiManager : Singleton<UiManager>
     /// </summary>
     void Start()
     {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            levelManager = TargetDefense.Level.LevelManager.instance;
-            levelManager.currency.currencyChanged += OnCurrencyChanged;
-        }
-
         PauseGame(true);
     }
 
@@ -149,12 +151,11 @@ public class UiManager : Singleton<UiManager>
     /// </summary>
     public void GoToLevel()
     {
+        BattleField.instance.InitializeBattleSystem();
         CloseAllUI();
         levelUI.SetActive(true);
         PauseGame(false);
-        XEventBus.Instance.Post(EventId.WaveStart);
     }
-
     /// <summary>
     /// Gos to defeat menu.
     /// </summary>
@@ -204,20 +205,11 @@ public class UiManager : Singleton<UiManager>
         LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    /// <summary>
-    /// Gets current gold amount.
-    /// </summary>
-    /// <returns>The gold.</returns>
-    private int GetGold()
+    public void OnCurrencyChanged(XEventArgs args)
     {
-        return TargetDefense.Level.LevelManager.instance.currency.currentCurrency;
+        int currentCurrency = args.GetData<int>(0);
+        goldAmount.text = currentCurrency.ToString();
     }
-
-    public void OnCurrencyChanged()
-    {
-        goldAmount.text = GetGold().ToString();
-    }
-
 
 	/// <summary>
 	/// Sets the defeat attempts.
@@ -228,16 +220,46 @@ public class UiManager : Singleton<UiManager>
 		defeatAttempts.text = attempts.ToString();
 	}
 
+    public void AddCurrency(int amount)
+    {
+        XEventBus.Instance.Post(EventId.AddCurrency, new XEventArgs(amount));
+    }
+
+    private void Captured(XEventArgs args)
+    {
+        if (beforeLooseCounter > 0)
+        {
+            beforeLooseCounter--;
+            SetDefeatAttempts(beforeLooseCounter);
+            if (beforeLooseCounter <= 0)
+            {
+                XEventBus.Instance.Post(EventId.GameResult, new XEventArgs(LevelState.Lose));
+                GoToDefeatMenu();
+            }
+        }
+    }
+
+    private void GameResult(XEventArgs args)
+    {
+        LevelState levelState = args.GetData<LevelState>(0);
+        switch (levelState) {
+            case LevelState.Win:
+                GoToVictoryMenu();
+                break;
+            case LevelState.Lose:
+                GoToDefeatMenu();
+                break;
+        }
+    }
+
     /// <summary>
     /// Raises the destroy event.
     /// </summary>
     protected override void OnDestroy()
 	{
         base.OnDestroy();
-        if (levelManager != null)
-        {
-            levelManager.currency.currencyChanged -= OnCurrencyChanged;
-        }
-        StopAllCoroutines();
+        XEventBus.Instance.UnRegister(EventId.CurrencyChanged, OnCurrencyChanged);
+        XEventBus.Instance.UnRegister(EventId.GameResult, GameResult);
+        XEventBus.Instance.UnRegister(EventId.Captured, Captured);
     }
 }

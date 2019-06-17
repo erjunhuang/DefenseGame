@@ -116,7 +116,7 @@ public class BulletArrow : MonoBehaviour, IBullet
 				// If bullet must deal damage to single target
 				if (aoeDamageOnly == false)
 				{
-                    targetable.GetComponent<AIBehaviors>().Damage(m_Damager.damage, targetable.transform.position, m_Damager.alignmentProvider);
+                    targetable.GetComponent<LevelAgent>().Damage(m_Damager.damage, targetable.transform.position, m_Damager.alignmentProvider);
 				}
             }
             // Destroy bullet

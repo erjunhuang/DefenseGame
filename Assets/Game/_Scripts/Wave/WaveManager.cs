@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Core.Extensions;
+using GameModel;
+using QGame.Core.Config;
+using QGame.Core.Event;
 using UnityEngine;
 
 namespace TargetDefense.Level
@@ -16,7 +19,7 @@ namespace TargetDefense.Level
         protected int m_CurrentIndex;
 
 		/// <summary>
-		/// Whether the WaveManager starts waves on Awake - defaulted to null since the LevelManager should call this function
+		/// Whether the WaveManager starts waves on Awake - defaulted to null since the BattleSystem should call this function
 		/// </summary>
 		public bool startWavesOnAwake;
 
@@ -54,11 +57,6 @@ namespace TargetDefense.Level
             }
         }
 
-        /// <summary>
-        /// Called when a wave begins
-        /// </summary>
-        public event Action waveChanged;
-
 		/// <summary>
 		/// Called when all waves are finished
 		/// </summary>
@@ -69,7 +67,34 @@ namespace TargetDefense.Level
 		/// </summary>
 		public virtual void StartWaves()
 		{
-			if (waves.Count > 0)
+            GameModel.MapCfg mapCfg = ConfigService.Instance.MapCfgList.GetOne(GameData.gameInfo.currentLevels);
+            int[] createMonsterInfo = mapCfg.CreateMonster;
+            int count = createMonsterInfo.Length;
+            for (int i = 0; i < count; i++) {
+                GameObject waveObj = new GameObject();
+                waveObj.transform.parent = transform;
+                waveObj.name = "Wave" + i;
+                TimedWave timedWave = waveObj.AddComponent<TimedWave>();
+
+                WaveCfg waveCfg = ConfigService.Instance.WaveCfgList.GetOne(createMonsterInfo[i]);
+                timedWave.timeToNextWave = waveCfg.timeToNextWave;
+                timedWave.spawnInstructions = new List<SpawnInstructionInfo>();
+                for (int j = 0; j < waveCfg.monsterInfo.Length; j ++)
+                {
+                    SpawnCfg spawnCfg = ConfigService.Instance.SpawnCfgList.GetOne(waveCfg.monsterInfo[j]);
+                    SpawnInstructionInfo spawnInstructionInfo = new SpawnInstructionInfo();
+                    spawnInstructionInfo.agentId = spawnCfg.agentId;
+                    spawnInstructionInfo.delayToSpawn = spawnCfg.delayToSpawn;
+                    spawnInstructionInfo.startingNode = spawnCfg.startingNode;
+
+                    timedWave.spawnInstructions.Add(spawnInstructionInfo);
+                }
+                
+                waves.Add(timedWave);
+            }
+
+
+            if (waves.Count > 0)
 			{
 				InitCurrentWave();
 			}
@@ -89,21 +114,7 @@ namespace TargetDefense.Level
 			{
 				StartWaves();
 			}
-
-            for (int i = 0; i < GameData.levelInfo.waveInfos.Count; i++) {
-                GameObject waveObj = new GameObject();
-                waveObj.transform.parent = transform;
-                waveObj.name = "Wave"+i;
-
-                TimedWave timedWave = waveObj.AddComponent<TimedWave>();
-                WaveInfo waveInfo = GameData.levelInfo.waveInfos[i];
-                foreach (SpawnInstructionInfo info in waveInfo.SpawnInstructions)
-                {
-                    timedWave.spawnInstructions.Add(info);
-                }
-                waves.Add(timedWave);
-            }
-    }
+        }
 
 		/// <summary>
 		/// Sets up the next wave
@@ -129,11 +140,12 @@ namespace TargetDefense.Level
 			Wave wave = waves[m_CurrentIndex];
 			wave.waveCompleted += NextWave;
 			wave.Init();
-			if (waveChanged != null)
-			{
-				waveChanged();
-			}
-		}
+
+            TimedWave timedWave = waves[waveNumber - 1] as TimedWave;
+            float timeToNextWave = timedWave.timeToNextWave;
+            int wavesCount = waves.Count;
+            XEventBus.Instance.Post(EventId.WaveChanged,new XEventArgs(waveNumber, timeToNextWave, wavesCount));
+        }
 
 		/// <summary>
 		/// Calls spawningCompleted event

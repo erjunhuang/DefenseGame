@@ -1,4 +1,5 @@
 ﻿using AIBehavior;
+using Core.Health;
 using Core.Utilities;
 using GameModel;
 using System;
@@ -14,8 +15,7 @@ public class TowerAgent : LevelAgent
     public IntVector2 gridPosition { get; private set; }
     public IPlacementArea placementArea { get; private set; }
 
-
-    public override void Initialize(long monsterId, params object[] args) {
+    public override void Initialize(int monsterId, params object[] args) {
         base.Initialize(monsterId, args);
     }
 
@@ -41,7 +41,14 @@ public class TowerAgent : LevelAgent
 
     protected override GameObject Create()
     {
-        long id = currentTargetLevelData.Id;
+
+
+        
+        IPlacementArea targetArea = (IPlacementArea)args[0];
+        IntVector2 destination = (IntVector2)args[1];
+         
+
+        long id = currentTargetLevelData.monster.Id;
         GameObject agent = Instantiate(Resources.Load<GameObject>("Prefab/Monster/" + id), transform);
 
         Animator animator = agent.GetComponent<Animator>();
@@ -50,6 +57,20 @@ public class TowerAgent : LevelAgent
         AIAnimationStates animationStates = GetComponentInParent<AIAnimationStates>();
 
         characterAnimator.anim = animator;
+
+
+        PatrolState patrolState = ai.GetState<PatrolState>();
+        Transform[] transforms = new Transform[2];
+        transforms[0] = targetArea.transform;
+        transforms[1] = targetArea.transform;
+        patrolState.SetPatrolPoints(transforms);
+        patrolState.GetTrigger<WithinDistanceTrigger>().center = transform;
+        //IdleState ldleState = ai.GetState<IdleState>();
+        //ldleState.currentNode = targetArea.transform;
+        //ldleState.GetTrigger<WithinDistanceTrigger>().center = targetArea.transform;
+
+        AttackState attackState = ai.GetState<AttackState>();
+        attackState.GetTrigger<BeyondDistanceTrigger>().center = targetArea.transform;
 
         //AI
         //BaseState baseState = ComponentHelper.AddComponentByName(ai.transform.Find("States").gameObject, "GotHitState") as BaseState;
@@ -60,15 +81,21 @@ public class TowerAgent : LevelAgent
         //gotHitState.animationStates[0] = animationStates.GetStateWithName("Hit");
         //ai.AddSubTrigger(gotHitState);
 
-        //放置
-        IPlacementArea targetArea = (IPlacementArea)args[0];
-        IntVector2 destination = (IntVector2)args[1];
-        UpdateTargetPos(targetArea, destination);
-
         //初始化
         UnityEngine.Object alignment = Resources.Load("Data/Alignment/TowerAlignment");
-        //currentTargetLevelData.MaxHealth = 10000;
-        ai.Initialize(currentTargetLevelData, alignment);
+
+        if (this.configuration.alignment == null)
+        {
+            this.configuration.alignment = new SerializableIAlignmentProvider();
+            this.configuration.alignment.unityObjectReference = alignment;
+        }
+        else {
+            this.configuration.alignment.unityObjectReference = alignment;
+        }
+
+        ai.Initialize();
+        //放置
+        UpdateTargetPos(targetArea, destination);
         return agent;
     }
 
@@ -79,15 +106,4 @@ public class TowerAgent : LevelAgent
             placementArea.Clear(gridPosition, dimensions);
         }
     }
-
-    public virtual void Show()
-    {
-        this.gameObject.SetActive(true);
-    }
-
-    public virtual void Hide()
-    {
-        this.gameObject.SetActive(false);
-    }
-
 }

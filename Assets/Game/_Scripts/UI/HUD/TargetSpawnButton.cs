@@ -1,4 +1,5 @@
 ﻿using GameModel;
+using QGame.Core.Config;
 using System;
 using TargetDefense.Targets;
 using UnityEngine;
@@ -26,21 +27,21 @@ public class TargetSpawnButton : MonoBehaviour, IDragHandler
 
     public Color energyInvalidColor;
 
-    public event Action<long> buttonTapped;
+    public event Action<int> buttonTapped;
 
-    public event Action<long> draggedOff;
+    public event Action<int> draggedOff;
 
 
-    long towerId;
+    int towerId;
 
     RectTransform m_RectTransform;
 
  
 
-    public void InitializeButton(long towerId)
+    public void InitializeButton(int towerId)
     {
         this.towerId = towerId;
-        Monster monster = GameData.monsters[towerId];
+        MonsterCfg monster = ConfigService.Instance.MonsterCfgList.GetOne(towerId);
         buttonText.text = monster.Cost.ToString();
         UpdateButton();
     }

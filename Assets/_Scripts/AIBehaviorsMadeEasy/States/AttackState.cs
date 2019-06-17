@@ -1,5 +1,10 @@
 using UnityEngine;
 using System.Collections;
+using ActionGameFramework.Health;
+using Core.Health;
+using QGame.Core.Event;
+using QGame.Core.FightEnegin;
+using GameModel;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,10 +19,9 @@ namespace AIBehavior
 {
 	public class AttackState : CooldownableState
 	{
-		public float attackDamage = 10.0f;
-		public float plusOrMinusDamage = 0.0f;
+        public long rangedAttackSkillId;
 		public bool findVisibleTargetsOnly = true;
-		Transform target = null;
+	    public Transform target = null;
 		Transform lastKnownTarget = null;
 
 		public string attackAnimName = "";
@@ -33,74 +37,130 @@ namespace AIBehavior
 			Animation,
 			Interval
 		}
-
-		public AttackMode attackBasedOn = AttackMode.Animation;
+         
+        public AttackMode attackBasedOn = AttackMode.Animation;
 
 		public float initialAttackTime = 0.5f;
 		public float attackInterval = 0.5f;
-		private float intervalAttackTime;
+        public float intervalAttackTime;
 
-		private Animation attackAnimation;
-		private AnimationCullingType initialCullingType;
-		private float animationLength = 0.0f;
-		private float curAnimPosition = 0.0f;
-		protected float previousSamplePosition = 0.0f;
+        public Animation attackAnimation;
+        public AnimationCullingType initialCullingType;
+        public float animationLength = 0.0f;
+        public float curAnimPosition = 0.0f;
+        public float previousSamplePosition = 0.0f;
 
 		public int attacksBeforeReload = 10;
 		public int attackCount = 0;
 		public BaseState reloadState = null;
 		public BaseState noTargetState = null;
 
-		private SkinnedMeshRenderer skinnedMeshRenderer = null;
+        public SkinnedMeshRenderer skinnedMeshRenderer = null;
 
 		bool goingToReload = false;
 
+        public PlayerSystem playerSystem;
 
-		protected override void Awake()
+        public eAttackState currentAttackState;
+
+        private AIBehaviors fsm;
+
+        public float attackRange;
+
+
+        public Transform GetTarget() {
+            return target;
+        }
+        public enum AttackType
+        {
+            Melee,
+            Range,
+        }
+        public AttackType attackType = AttackType.Range;
+
+        public enum CounterattackMode
+        {
+            Active,
+            Passive,
+        }
+        public CounterattackMode counterattackMode = CounterattackMode.Active;
+
+        protected override void Awake()
 		{
 			skinnedMeshRenderer = transform.root.GetComponentInChildren<SkinnedMeshRenderer>();
 			base.Awake();
 		}
+        //public void ChangeState(eAttackState state) {
+        //    playerSystem.ChangeState(state);
+        //}
 
+        public bool IsCanAttack() {
 
-		protected override void Init(AIBehaviors fsm)
+            if (attackBasedOn == AttackMode.Interval)
+            {
+                return HandleIntervalAttackMode(fsm, target);
+            }
+            else
+            {
+                return HandleAnimationAttackMode(fsm, target);
+            }
+        }
+
+        public void ResetCoolDownTime()
+        {
+            if (attackBasedOn == AttackMode.Interval)
+            {
+                intervalAttackTime = Time.time + attackInterval;
+            }
+            else
+            {
+                previousSamplePosition = curAnimPosition;
+            }
+        }
+        protected override void Init(AIBehaviors fsm)
 		{
-            attackDamage = fsm.monsterInfo.PhyAttackMax;
+            //playerSystem = new PlayerSystem(this,fsm);
 
+            this.fsm = fsm;
+            fsm.SetNavMeshAgentStoppingDistance(attackRange);
+            if (fsm.target != null)
+            {
+                target = fsm.target;
+            }
+           
             goingToReload = false;
-			curAnimPosition = 0.0f;
-			previousSamplePosition = 0.0f;
+            curAnimPosition = 0.0f;
+            previousSamplePosition = 0.0f;
 
-			if ( inheritPreviousStateMovement && fsm.previousState != null )
-			{
-				fsm.MoveAgent(fsm.previousState.GetNextMovement(fsm), movementSpeed, rotationSpeed);
-			}
-			else
-			{
-				fsm.MoveAgent(fsm.transform, 0.0f, rotationSpeed);
-			}
+            if (inheritPreviousStateMovement && fsm.previousState != null)
+            {
+                fsm.MoveAgent(fsm.previousState.GetNextMovement(fsm), movementSpeed, rotationSpeed);
+            }
+            else
+            {
+                fsm.MoveAgent(fsm.transform, 0.0f, rotationSpeed);
+            }
 
-			if ( attackBasedOn == AttackMode.Animation )
-			{
-				attackAnimation = fsm.gameObject.GetComponentInChildren<Animation>();
+            if (attackBasedOn == AttackMode.Animation)
+            {
+                attackAnimation = fsm.gameObject.GetComponentInChildren<Animation>();
 
-				if ( attackAnimation != null && attackAnimation[attackAnimName] != null )
-				{
-					initialCullingType = attackAnimation.cullingType;
-					attackAnimation.cullingType = AnimationCullingType.AlwaysAnimate;
-					animationLength = attackAnimation[attackAnimName].length;
-				}
-				else
-				{
-					animationLength = 1.0f;
-				}
-			}
-			else
-			{
-				intervalAttackTime = Time.time + initialAttackTime;
-			}
-		}
-
+                if (attackAnimation != null && attackAnimation[attackAnimName] != null)
+                {
+                    initialCullingType = attackAnimation.cullingType;
+                    attackAnimation.cullingType = AnimationCullingType.AlwaysAnimate;
+                    animationLength = attackAnimation[attackAnimName].length;
+                }
+                else
+                {
+                    animationLength = 1.0f;
+                }
+            }
+            else
+            {
+                intervalAttackTime = Time.time + initialAttackTime;
+            }
+        }
 
 		protected override void StateEnded(AIBehaviors fsm)
 		{
@@ -110,7 +170,10 @@ namespace AIBehavior
 			{
 				attackAnimation.cullingType = initialCullingType;
 			}
-		}
+
+            lastKnownTarget = target = null;
+            fsm.SetNavMeshAgentStoppingDistance(0);
+        }
 
 
 		protected override bool Reason(AIBehaviors fsm)
@@ -118,26 +181,42 @@ namespace AIBehavior
 			return true;
 		}
 
-
-		protected override void Action(AIBehaviors fsm)
+        protected override void Action(AIBehaviors fsm)
 		{
-			target = GetTarget(fsm);
+            //playerSystem.PerformAction();
 
-			if ( target != null )
-			{
-				lastKnownTarget = target;
-				fsm.RotateAgent(target, rotationSpeed);
-				HandlePreviousStateMovement(fsm, target);
-				if(!goingToReload)
-					HandleAttack(fsm, target);
-			}
-			else
-			{
-				fsm.ChangeActiveState(noTargetState);
-			}
-		}
+            lastKnownTarget = GetTarget(fsm);
+            if (target != null)
+            {
+                if (counterattackMode == CounterattackMode.Active) {
+                    HandlePreviousStateMovement(fsm, target);
+                }
+                fsm.RotateAgent(target, rotationSpeed);
 
-		protected Transform GetTarget(AIBehaviors fsm)
+                if (!goingToReload) {
+                    float sqrDistanceThreshold = attackRange * attackRange;
+                    Vector3 targetDir = target.transform.position - fsm.transform.position;
+                    if (targetDir.sqrMagnitude < sqrDistanceThreshold)
+                    {
+                        HandleAttack(fsm, target);
+                    }
+                }
+            }
+            else
+            {
+                target = lastKnownTarget;
+                if (target == null) {
+                    fsm.ChangeActiveState(noTargetState);
+                }
+            }
+
+            //Vector3 targetDir = target.transform.position - fsm.transform.position;
+            //Debug.Log("targetDir:" + targetDir.sqrMagnitude);
+
+            //currentAttackState = playerSystem.attack_state.CurrentState;
+        }
+        
+        protected Transform GetTarget(AIBehaviors fsm)
 		{
 			if ( findVisibleTargetsOnly )
 			{
@@ -152,25 +231,31 @@ namespace AIBehavior
 
 		protected void HandleAttack(AIBehaviors fsm, Transform target)
 		{
-			if ( scriptWithAttackMethod != null && !string.IsNullOrEmpty(methodName) )
-			{
+   //         if ( scriptWithAttackMethod != null && !string.IsNullOrEmpty(methodName) )
+			//{
 				if ( attackBasedOn.Equals(AttackMode.Animation) )
 				{
 					HandleAnimationAttackMode(fsm, target);
 				}
 				else
 				{
-					if ( Time.time > intervalAttackTime )
-					{
-						Attack(fsm, target);
-						intervalAttackTime = Time.time + attackInterval;
-					}
-				}
-			}
+                    HandleIntervalAttackMode(fsm, target);
+                }
+			//}
 		}
 
+        protected virtual bool HandleIntervalAttackMode(AIBehaviors fsm, Transform target) {
+            if (Time.time > intervalAttackTime)
+            {
+                Attack(fsm, target);
+                intervalAttackTime = Time.time + attackInterval;
+                return true;
+            }
+            return false;
+        }
 
-		protected virtual void HandleAnimationAttackMode(AIBehaviors fsm, Transform target)
+
+        protected virtual bool HandleAnimationAttackMode(AIBehaviors fsm, Transform target)
 		{
 			bool useAnimationTime = skinnedMeshRenderer == null || skinnedMeshRenderer.isVisible;
 			string animationName = animationStates[0].name;
@@ -200,12 +285,11 @@ namespace AIBehavior
 			if ( previousSamplePosition > attackPoint || adjCurAnimPosition < attackPoint )
 			{
 				previousSamplePosition = curAnimPosition;
-				return;
+				return false;
 			}
-
-			previousSamplePosition = curAnimPosition;
-
-			Attack(fsm, target);
+            Attack(fsm, target);
+            previousSamplePosition = curAnimPosition;
+            return true;
 		}
 
 
@@ -245,14 +329,37 @@ namespace AIBehavior
 			return 1.0f;
 		}
 
-
-		protected virtual void Attack(AIBehaviors fsm, Transform target)
+		public virtual void Attack(AIBehaviors fsm, Transform target)
 		{
-			scriptWithAttackMethod.SendMessage(methodName, new AttackData(fsm, this, target));
-			fsm.PlayAudio();
-            PlayRandomAnimation(fsm);
+            //scriptWithAttackMethod.SendMessage(methodName, new AttackData(fsm, target, rangedAttackSkillId));
 
-            attackCount++;
+
+            AttackData attackData = new AttackData(fsm, target, rangedAttackSkillId);
+
+            SkillCfg skillCfg = attackData.fsm.levelAgent.GetSkill();
+            if (skillCfg != null)
+            {
+                //技能 没有就是普通攻击
+                attackData.skillId = skillCfg.Id;
+                attackData.fsm.levelAgent.ResetSkill(skillCfg);
+
+                XEventBus.Instance.Post(EventId.BattleSkillHurt, new XEventArgs(attackData));
+            }
+            else
+            {
+                if (attackType == AttackState.AttackType.Melee)
+                {
+                    XEventBus.Instance.Post(EventId.BattleHurt, new XEventArgs(attackData));
+                }
+                else
+                {
+                    XEventBus.Instance.Post(EventId.BattleSkillHurt, new XEventArgs(attackData));
+                }
+            }
+
+            fsm.PlayAudio();
+
+			attackCount++;
 
 			if ( attackCount > attacksBeforeReload )
 			{
@@ -287,12 +394,6 @@ namespace AIBehavior
 			return "Attack";
 		}
 
-		public Transform GetLastKnownTarget()
-		{
-			return lastKnownTarget;
-		}
-
-
 #if UNITY_EDITOR
 		// === Editor Methods === //
 
@@ -320,13 +421,25 @@ namespace AIBehavior
 			
 			GUILayout.BeginVertical(GUI.skin.box);
 
-			m_property = m_State.FindProperty("attackDamage");
-			EditorGUILayout.PropertyField(m_property);
+            m_property = m_State.FindProperty("rangedAttackSkillId");
+            EditorGUILayout.PropertyField(m_property);
+            EditorGUILayout.Separator();
 
-			m_property = m_State.FindProperty("plusOrMinusDamage");
-			EditorGUILayout.PropertyField(m_property);
+            m_property = m_State.FindProperty("attackType");
+            EditorGUILayout.PropertyField(m_property);
+            EditorGUILayout.Separator();
 
-			m_property = m_State.FindProperty("findVisibleTargetsOnly");
+
+            m_property = m_State.FindProperty("counterattackMode");
+            EditorGUILayout.PropertyField(m_property);
+            EditorGUILayout.Separator();
+             
+
+            m_property = m_State.FindProperty("attackRange");
+            EditorGUILayout.PropertyField(m_property);
+            EditorGUILayout.Separator();
+
+            m_property = m_State.FindProperty("findVisibleTargetsOnly");
 			EditorGUILayout.PropertyField(m_property);
 
 			EditorGUILayout.Separator();
@@ -566,13 +679,8 @@ namespace AIBehavior
 
 		protected override bool UsesMultipleAnimations()
 		{
-			return true;
+			return false;
 		}
-
-        protected override bool UsesMultipleSkills()
-        {
-            return true;
-        }
 #endif
-    }
+	}
 }

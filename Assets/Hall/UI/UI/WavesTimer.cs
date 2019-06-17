@@ -22,8 +22,6 @@ public class WavesTimer : MonoBehaviour
 	// Duration for highlighted effect
 	public float highlightedTO = 0.2f;
 
-    // Waves list
-	private List<Wave> waves = new List<Wave>();
 
     // TO before next wave
     private WaveManager waveManager;
@@ -52,32 +50,28 @@ public class WavesTimer : MonoBehaviour
 	/// </summary>
 	void Start()
     {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            waveManager = TargetDefense.Level.LevelManager.instance.waveManager;
-            waves = waveManager.waves;
-            maxWaveNumberText.text = waves.Count.ToString();
-            waveManager.waveChanged += OnWaveChanged;
-            waveManager.spawningCompleted += OnSpawningCompleted;
+        XEventBus.Instance.Register(EventId.WaveChanged, OnWaveChanged);
 
-            highlightedFX.SetActive(false);
-            currentWaveText.text = "0";
-            timeBar.fillAmount = 0;
-            time = 0;
-            isStartWave = false;
-        }
+        highlightedFX.SetActive(false);
+        currentWaveText.text = "0";
+        timeBar.fillAmount = 0;
+        time = 0;
+        isStartWave = false;
     }
-    void OnWaveChanged() {
+    void OnWaveChanged(XEventArgs args) {
+
+        int waveNumber = args.GetData<int>(0);
+        int timeToNextWave = args.GetData<int>(1);
+        int wavesCount = args.GetData<int>(2);
          
-        currentWaveText.text = waveManager.waveNumber.ToString();
-        TimedWave timedWave = waveManager.waves[waveManager.waveNumber-1] as TimedWave;
-        currentWaveFinishTime = timedWave.timeToNextWave;
+        currentWaveText.text = waveNumber.ToString();
+        currentWaveFinishTime = timeToNextWave;
+        maxWaveNumberText.text = wavesCount.ToString();
         isStartWave = true;
 
         StartCoroutine("HighlightTimer");
     }
-    void OnSpawningCompleted() {
-    }
+   
     /// <summary>
     /// Update this instance.
     /// </summary>
@@ -110,6 +104,6 @@ public class WavesTimer : MonoBehaviour
 	/// </summary>
 	void OnDestroy()
 	{
-		StopAllCoroutines();
+        XEventBus.Instance.UnRegister(EventId.WaveChanged, OnWaveChanged);
 	}
 }

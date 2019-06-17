@@ -12,37 +12,26 @@ namespace QGame.Core.FightEnegin.Damage.Buff
         private float healStepTime = 1f;
         private float currentStepTime = 0;
         public int stepBlood;
-        public DamgeBuff(eBuffType buffType, AIBehaviors attacker, AIBehaviors target)
+        public DamgeBuff(BuffInfo buffInfo, LevelAgent attacker, LevelAgent target)
         {
-            this.buffType = buffType;
+            this.buffInfo = buffInfo;
             this.attacker = attacker;
             this.target = target;
 
+            this.buffType = buffInfo.buffType;
+
             InitData();
             //根据玩家数值运算
-            int allValue = this.buffInfo.AllValue * attacker.monsterInfo.PhyAttackMax;
+            int allValue = this.buffInfo.AllValue;
             stepBlood = allValue / (int)(durationTime / healStepTime);
         }
 
         void InitData()
-        {
-            this.buffInfo = new BuffInfo();
-            this.buffInfo.buffID = 0;
-            this.buffInfo.targetHeroUniqueID = 0;
-            this.buffInfo.nnc = null;
-
-            this.buffInfo.AllValue = 30;
-            this.buffInfo.durationTime = 10;
-            this.buffInfo.buffType = buffType;
-            this.buffInfo.buffResName = "PoisonFX";
-
-             
-            healStepTime = 1f;
+        { 
             this.blDebuff = true;
             durationTime = this.buffInfo.durationTime;
             buffIconUrl = "19";
             buffEffectName = this.buffInfo.buffResName;
-
             currentStepTime = healStepTime;
         }
         override public bool onEnert()
@@ -54,7 +43,7 @@ namespace QGame.Core.FightEnegin.Damage.Buff
                 DamgeBuff hb = (DamgeBuff)this.target.list_buff[eBuffType.damage];
                 hb.durationTime = this.durationTime;
                 hb.buffInfo = this.buffInfo;
-                int allValue = this.buffInfo.AllValue * attacker.monsterInfo.PhyAttackMax;
+                int allValue = this.buffInfo.AllValue * attacker.currentTargetLevelData.monster.PhyAttackMax;
                 hb.stepBlood = allValue / (int)(durationTime / healStepTime);
                 return false;
             }

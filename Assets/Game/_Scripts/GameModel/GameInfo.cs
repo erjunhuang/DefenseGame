@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class GameInfo
 {
-    public List<long> towersInfo = new List<long>();
-    public long currentLevels;
+    public int currentLevels;
+    public List<int> towersInfo = new List<int>();
     //public List<Skill> skills = new List<Skill>();
 }

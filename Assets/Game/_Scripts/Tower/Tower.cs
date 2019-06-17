@@ -25,7 +25,7 @@ public class Tower : Targetable
     //{
     //    get { return levels[currentLevel].targetGhostPrefab; }
     //}
-    public Monster currentTargetLevelData
+    public MonsterCfg currentTargetLevelData
     {
         get { return towerLevels[currentLevel]; }
     }
@@ -35,16 +35,16 @@ public class Tower : Targetable
     public IntVector2 gridPosition { get; private set; }
     public IPlacementArea placementArea { get; private set; }
 
-    public List<Monster> towerLevels = new List<Monster>();
+    public List<MonsterCfg> towerLevels = new List<MonsterCfg>();
 
     public virtual void Initialize(IPlacementArea targetArea, IntVector2 destination)
     {
         UpdateTargetPos(targetArea, destination);
         SetLevel(0);
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            TargetDefense.Level.LevelManager.instance.levelStateChanged += OnLevelStateChanged;
-        }
+        //if (TargetDefense.Level.BattleField.instanceExists)
+        //{
+        //    TargetDefense.Level.BattleField.instance.levelStateChanged += OnLevelStateChanged;
+        //}
     }
 
     public virtual void UpdateTargetPos(IPlacementArea targetArea, IntVector2 destination)
@@ -96,16 +96,16 @@ public class Tower : Targetable
     public int GetSellLevel(int level)
     {
         // sell for full price if waves haven't started yet
-        if (TargetDefense.Level.LevelManager.instance.levelState == LevelState.Building)
-        {
-            int cost = 0;
-            for (int i = 0; i <= level; i++)
-            {
-                cost += towerLevels[i].Cost;
-            }
+        //if (TargetDefense.Level.BattleSystem.instance.levelState == LevelState.Building)
+        //{
+        //    int cost = 0;
+        //    for (int i = 0; i <= level; i++)
+        //    {
+        //        cost += towerLevels[i].Cost;
+        //    }
 
-            return cost;
-        }
+        //    return cost;
+        //}
         return towerLevels[currentLevel].Sell;
     }
     public virtual bool UpgradeTarget()
@@ -152,10 +152,10 @@ public class Tower : Targetable
 
     protected virtual void OnDestroy()
     {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            TargetDefense.Level.LevelManager.instance.levelStateChanged -= OnLevelStateChanged;
-        }
+        //if (TargetDefense.Level.BattleSystem.instanceExists)
+        //{
+        //    TargetDefense.Level.BattleSystem.instance.levelStateChanged -= OnLevelStateChanged;
+        //}
     }
 
     protected void SetLevel(int level)
@@ -189,9 +189,9 @@ public class Tower : Targetable
         ScaleHealth();
 
         //// disable affectors
-        LevelState levelState = LevelManager.instance.levelState;
-        bool initialise = levelState == LevelState.SpawningEnemies || levelState == LevelState.AllEnemiesSpawned;
-        currentTargetLevel.SetAffectorState(initialise);
+        //LevelState levelState = BattleSystem.instance.levelState;
+        //bool initialise = levelState == LevelState.SpawningEnemies || levelState == LevelState.AllEnemiesSpawned;
+        //currentTargetLevel.SetAffectorState(initialise);
     }
 
     protected virtual void ScaleHealth()

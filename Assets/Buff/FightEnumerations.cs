@@ -12,7 +12,7 @@ namespace QGame.Core.FightEnegin
     /// <summary>
     /// 方阵状态 Suppress技能压制 Stun晕眩 Stand站立
     /// </summary>
-    public enum eAttackState : byte { Idle, SelectTarget, Move, MoveToAttackPosition, Charge, Ready, Fighting, Done, Suppress, Dead, Victory, Stun }
+    public enum eAttackState : byte { Idle, SelectTarget, Move, MoveToAttackPosition, Charge, Ready, Fighting, Done, Suppress, Dead, Victory, Stun , Stand }
 
     /// <summary>
     /// 攻击阶段

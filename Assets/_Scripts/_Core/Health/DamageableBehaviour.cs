@@ -7,7 +7,7 @@ namespace Core.Health
 	/// <summary>
 	/// Abstract class for any MonoBehaviours that can take damage
 	/// </summary>
-	public class DamageableBehaviour : AIComponent
+	public class DamageableBehaviour : MonoBehaviour
     {
 		/// <summary>
 		/// The Damageable object

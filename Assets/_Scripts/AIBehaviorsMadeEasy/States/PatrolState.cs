@@ -129,19 +129,19 @@ namespace AIBehavior
     				}
     			}
 
-    			for ( int i = 0; i < patrolPoints.Length; i++ )
-    			{
-    				for ( int j = i+1; j < patrolPoints.Length; j++ )
-    				{
-    					if ( patrolPoints[i].name.CompareTo(patrolPoints[j].name) > 0 )
-    					{
-    						Transform temp = patrolPoints[i];
+    			//for ( int i = 0; i < patrolPoints.Length; i++ )
+    			//{
+    			//	for ( int j = i+1; j < patrolPoints.Length; j++ )
+    			//	{
+    			//		if ( patrolPoints[i].name.CompareTo(patrolPoints[j].name) > 0 )
+    			//		{
+    			//			Transform temp = patrolPoints[i];
 
-    						patrolPoints[i] = patrolPoints[j];
-    						patrolPoints[j] = temp;
-    					}
-    				}
-    			}
+    			//			patrolPoints[i] = patrolPoints[j];
+    			//			patrolPoints[j] = temp;
+    			//		}
+    			//	}
+    			//}
     		}
 		}
 

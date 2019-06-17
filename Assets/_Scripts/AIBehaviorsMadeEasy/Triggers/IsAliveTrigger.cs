@@ -11,7 +11,7 @@ namespace AIBehavior
 	{
 		protected override bool Evaluate(AIBehaviors fsm)
 		{
-			return fsm.configuration.currentHealth > 0;
+			return fsm.levelAgent.GetHealthValue() > 0;
 		}
 		
 		

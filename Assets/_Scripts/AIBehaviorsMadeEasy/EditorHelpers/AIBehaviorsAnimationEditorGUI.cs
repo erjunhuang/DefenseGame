@@ -75,7 +75,7 @@ namespace AIBehaviorEditor
 			}
 
 			// Is the component assigned?
-			if ( m_animationStates.objectReferenceValue != null && animStatesComponent != null&& arraySize>0)
+			if ( m_animationStates.objectReferenceValue != null && animStatesComponent != null )
 			{
 				GUILayout.BeginVertical(GUI.skin.box);
 
@@ -141,7 +141,7 @@ namespace AIBehaviorEditor
 										statesProperty.InsertArrayElementAtIndex(i);
 									}
 
-									//GUI.enabled = arraySize > 1;
+									GUI.enabled = arraySize > 1;
 									if ( GUILayout.Button(styles.blankContent, styles.removeStyle, GUILayout.MaxWidth(styles.addRemoveButtonWidths)) )
 									{
 										AIBehaviorsAssignableObjectArray.RemoveObjectAtIndex(m_StateObject, i, "animationStates");
@@ -165,14 +165,7 @@ namespace AIBehaviorEditor
 				GUILayout.EndVertical();
 			}
 
-
-            if (GUILayout.Button(styles.blankContent, styles.addStyle, GUILayout.MaxWidth(styles.addRemoveButtonWidths)))
-            {
-                statesProperty.arraySize++;
-                statesProperty.GetArrayElementAtIndex(arraySize).objectReferenceValue = animStatesComponent.states[0];
-            }
-
-            m_StateObject.ApplyModifiedProperties();
+			m_StateObject.ApplyModifiedProperties();
 		}
 
 

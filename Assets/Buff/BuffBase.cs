@@ -25,8 +25,8 @@ namespace QGame.Core.FightEnegin.Damage
         public float durationTime = 5;
         public string buffIconUrl;
         protected BuffInfo buffInfo;
-        protected AIBehaviors target;
-        protected AIBehaviors attacker;
+        protected LevelAgent target;
+        protected LevelAgent attacker;
         public EffectDelayPlay buffEffectDelayPlay;
         /// <summary>
         /// 是否是减益效果
@@ -36,22 +36,22 @@ namespace QGame.Core.FightEnegin.Damage
         /// buff特效路径
         /// </summary>
         protected string buffEffectName=string.Empty;
-        public static BuffBase GetBuff(eBuffType buffType, AIBehaviors attacker, AIBehaviors target)
-        {
+        public static BuffBase GetBuff(BuffInfo buffInfo, LevelAgent attacker, LevelAgent target)
+        {   
             //if (buffType == null)
             //    return null;
             //if (buffInfo.nnc != null)
             //{
             //}
-            switch (buffType)
+            switch (buffInfo.buffType)
             {
                 case eBuffType.heal:
                     {
-                        return new  HealBuff(buffType, attacker , target);
+                        return new  HealBuff(buffInfo, attacker , target);
                     }
                 case eBuffType.damage:
                     {
-                        return new DamgeBuff(buffType, attacker, target);
+                        return new DamgeBuff(buffInfo, attacker, target);
                     }
                 default:
                     {
@@ -112,13 +112,19 @@ namespace QGame.Core.FightEnegin.Damage
         /// <summary>
         /// The amount of damage this damager does
         /// </summary>
-        public int physicalDamage;
-
-        public int magicDamage;
+        public int damage;
         public int heal;
-        public int[] buffInfo;
-
-        public IAlignmentProvider alignmentProvider;
+        public List<BuffInfo> buffInfos;
+        public IAlignmentProvider alignment;
+        public DamageInfo()
+        {
+        }
+        public DamageInfo(int damage, int heal, List<BuffInfo> buffInfos, IAlignmentProvider alignment) {
+            this.damage = damage;
+            this.heal = heal;
+            this.buffInfos = buffInfos;
+            this.alignment = alignment;
+        }
     }
 
     public class BuffInfo
@@ -147,6 +153,20 @@ namespace QGame.Core.FightEnegin.Damage
         /// 特效资源路径名
         /// </summary>
         public string buffResName = string.Empty;
+        public BuffInfo()
+        {
+        }
+        public BuffInfo(eBuffType buffType, int AllValue = 0,float durationTime = 0,string buffResName ="", NumericalNumberChange nnc = null,int buffID=0, int targetHeroUniqueID=0)
+        {
+            this.buffType = buffType;
+            this.AllValue = AllValue;
+            this.durationTime = durationTime;
+            this.buffResName = buffResName;
+            this.nnc = nnc;
+
+            this.buffID = buffID;
+            this.targetHeroUniqueID = targetHeroUniqueID;
+        }
     }
 
     /// <summary>

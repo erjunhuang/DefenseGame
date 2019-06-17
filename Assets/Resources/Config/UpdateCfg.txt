@@ -1,0 +1,16 @@
+﻿{"Id":1,"Name":"箭塔技能树","NextID":0,"NeedLv":0,"NeedGold":0,"SKillTree":[1001,1002,1003,1005,1006,1007,1011,1012,1013,1015,1016,1017],"SkillSeries":[11,12],"Relation":[2004,11,1001,1005,2005,12,1011,1015],"levelIds":[2001,2002,2003]}
+{"Id":2,"Name":"炮塔技能树","NextID":0,"NeedLv":0,"NeedGold":0,"SKillTree":[],"SkillSeries":[21,22],"Relation":[],"levelIds":[]}
+{"Id":3,"Name":"魔法塔技能树","NextID":0,"NeedLv":0,"NeedGold":0,"SKillTree":[],"SkillSeries":[31,32],"Relation":[],"levelIds":[]}
+{"Id":4,"Name":"兵塔技能树","NextID":0,"NeedLv":0,"NeedGold":0,"SKillTree":[],"SkillSeries":[41,42],"Relation":[],"levelIds":[]}
+{"Id":1001,"Name":"剧毒箭矢","NextID":1002,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1002,"Name":"剧毒箭矢","NextID":1003,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1003,"Name":"剧毒箭矢","NextID":0,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1005,"Name":"森林之怒","NextID":1006,"NeedLv":0,"NeedGold":300,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1006,"Name":"森林之怒","NextID":1007,"NeedLv":0,"NeedGold":150,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1007,"Name":"森林之怒","NextID":0,"NeedLv":0,"NeedGold":150,"SKillTree":[],"SkillSeries":[11],"Relation":[],"levelIds":[]}
+{"Id":1011,"Name":"狙击","NextID":1012,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}
+{"Id":1012,"Name":"狙击","NextID":1013,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}
+{"Id":1013,"Name":"狙击","NextID":0,"NeedLv":0,"NeedGold":250,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}
+{"Id":1015,"Name":"霰弹射击","NextID":1016,"NeedLv":0,"NeedGold":300,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}
+{"Id":1016,"Name":"霰弹射击","NextID":1017,"NeedLv":0,"NeedGold":300,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}
+{"Id":1017,"Name":"霰弹射击","NextID":0,"NeedLv":0,"NeedGold":300,"SKillTree":[],"SkillSeries":[12],"Relation":[],"levelIds":[]}

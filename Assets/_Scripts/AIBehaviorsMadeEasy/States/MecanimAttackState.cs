@@ -37,7 +37,7 @@ namespace AIBehavior
 		}
 
 
-		protected override void HandleAnimationAttackMode (AIBehaviors fsm, Transform target)
+		protected override bool HandleAnimationAttackMode (AIBehaviors fsm, Transform target)
 		{
 			if ( animator != null && scriptWithAttackMethod != null && !string.IsNullOrEmpty(methodName) )
 			{
@@ -51,11 +51,14 @@ namespace AIBehavior
 					if ( curNormalizedTime > attackPoint && prevNormalizedTime < attackPoint )
 					{
 						Attack(fsm, target);
+                        return true;
 					}
 
 					prevNormalizedTime = curNormalizedTime;
 				}
 			}
+
+            return false;
 		}
 
 

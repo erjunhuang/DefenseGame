@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
-using ActionGameFramework.Health;
 
 namespace AIBehavior
 {
-	public class AIComponent : MonoBehaviour  
-    {
+	public class AIComponent : MonoBehaviour
+	{
 		// === General Items === //
 
 		protected string displayName = "";

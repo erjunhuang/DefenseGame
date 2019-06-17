@@ -4,7 +4,7 @@ namespace AIBehavior
 	{
 		public override bool IsThresholdCrossed(AIBehaviors fsm)
 		{
-			return fsm.GetHealthValue() <= healthThreshold;
+			return fsm.levelAgent.GetHealthValue() <= healthThreshold;
 		}
 		
 		

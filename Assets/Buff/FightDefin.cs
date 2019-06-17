@@ -11,7 +11,7 @@ namespace QGame.Core.FightEnegin.Damage
         public static int defaultLayer = 0;
         public static int skillLayer = 8;
 
-        public static EffectDelayPlay LoadSkill(GameObject skillPrefab, AIBehaviors attachActor, eSkillDirection skillDirection = eSkillDirection.orignal, bool blContainToPlayerControl = false, bool blInSkillLay = true)//,float durationTime=0
+        public static EffectDelayPlay LoadSkill(GameObject skillPrefab, LevelAgent attachActor, eSkillDirection skillDirection = eSkillDirection.orignal, bool blContainToPlayerControl = false, bool blInSkillLay = true)//,float durationTime=0
         {
             if (attachActor == null)
             {

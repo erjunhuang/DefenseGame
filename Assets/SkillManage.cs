@@ -10,18 +10,16 @@ using UnityEngine;
 
 public class SkillManage : MonoBehaviour {
     public string skillName;
-    List<AIBehaviors> skillTargets;
+    List<LevelAgent> skillTargets;
     private List<SkillBase> sbs;
-    private float KaiPingEndTime = 0f;
+    private float totalTime = 0f;
     public Action OnComplete;
-    public void Init(AIBehaviors attacker, List<AIBehaviors> targets, List<DamageInfo> skillDamages)//, List<int> damages, bool blClearSkill = false, bool blJingHua = false
-    {   
-
+    public void Init(LevelAgent attacker, List<LevelAgent> targets, List<DamageInfo> skillDamages)//, List<int> damages, bool blClearSkill = false, bool blJingHua = false
+    {
         skillTargets = targets;
         sbs = new List<SkillBase>();
         int nCount = gameObject.transform.childCount;
-
-
+         
         for (int i = 0; i < nCount; i++)
         {
             SkillBase skill = gameObject.transform.GetChild(i).gameObject.GetComponent<SkillBase>();
@@ -29,13 +27,24 @@ public class SkillManage : MonoBehaviour {
             {
                 skill.AttachActor(attacker, targets, skillDamages);
                 sbs.Add(skill);
-                KaiPingEndTime += skill.kapingTime;
+                //totalTime += skill.totalTime;
+
+                skill.isOver += OnItemSkillOver;
             }
         }
 
-        StartCoroutine(UpdateSelf());
+        //StartCoroutine(UpdateSelf());
     }
-    public void Init(AIBehaviors attacker, List<AIBehaviors> targets, Skill skillInfo) {
+
+    private void OnItemSkillOver(SkillBase skill)
+    {
+        sbs.Remove(skill);
+        if (sbs.Count == 0) {
+            BattleSkillCount();
+        }
+    }
+
+    public void Init(LevelAgent attacker, List<LevelAgent> targets, SkillCfg skillInfo) {
 
     }
     // Use this for initialization
@@ -48,7 +57,7 @@ public class SkillManage : MonoBehaviour {
 		
 	}
 
-    public virtual void BattleSkillKapingCount()
+    public virtual void BattleSkillCount()
     {
         if (OnComplete != null) {
             OnComplete();
@@ -58,11 +67,11 @@ public class SkillManage : MonoBehaviour {
     float _currentTime = 0;
     IEnumerator UpdateSelf()
     {
-        while (_currentTime < KaiPingEndTime)
+        while (_currentTime < totalTime)
         {
             _currentTime += GameManager.RealDeltaTime;
             yield return 0;
         }
-        BattleSkillKapingCount();
+        BattleSkillCount();
     }
 }

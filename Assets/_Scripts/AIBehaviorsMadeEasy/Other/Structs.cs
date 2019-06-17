@@ -5,17 +5,14 @@ namespace AIBehavior
 	public struct AttackData
 	{
 		public AIBehaviors fsm;
-		public AttackState attackState;
 		public Transform target;
-		public float damage { get { return attackState.attackDamage; } }
-		public float plusOrMinusDamage { get { return attackState.plusOrMinusDamage; } }
+        public long skillId;
 
-
-		public AttackData(AIBehaviors aiBehaviors, AttackState attackState, Transform target)
+		public AttackData(AIBehaviors aiBehaviors, Transform target, long skillId)
 		{
 			this.fsm = aiBehaviors;
-			this.attackState = attackState;
 			this.target = target;
-		}
+            this.skillId = skillId;
+        }
 	}
 }

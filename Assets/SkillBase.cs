@@ -1,31 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using ActionGameFramework.Health;
-using AIBehavior;
+using Core.Health;
 using QGame.Core.FightEnegin.Damage;
-using TowerDefense.Game;
+using QGame.Utils;
 using UnityEngine;
 
 public class SkillBase: MonoBehaviour
 {
     public float delayPlayTime = 0;
-    protected AIBehaviors skillActor;
-    protected List<AIBehaviors> skillTargets;
+    protected LevelAgent attacker;
+    protected List<LevelAgent> targets;
     protected List<DamageInfo> skillDamages;
-    public GameObject skill_Effect;
     protected float _currentTime = 0;
+    public GameObject skill_Effect;
+    protected List<EffectDelayPlay> effects;
 
-    public float kapingTime;
-    public virtual int AttachActor(AIBehaviors attacker, List<AIBehaviors> targets, List<DamageInfo> skillDamages)
+    public Action<SkillBase> isOver;
+    public virtual int AttachActor(LevelAgent attacker, List<LevelAgent> targets, List<DamageInfo> skillDamages)
     {
-        this.skillActor = attacker;
-        this.skillTargets = targets;
+        effects = new List<EffectDelayPlay>();
+        this.attacker = attacker;
+        this.targets = targets;
         this.skillDamages = skillDamages;
+        _currentTime = 0;
         return 0;
     }
 
-    void Update()
+    protected virtual void Update()
     {
-        _currentTime += GameManager.RealDeltaTime;
+         _currentTime += Time.deltaTime;
     }
 }

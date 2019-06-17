@@ -112,9 +112,9 @@ namespace TargetDefense.UI.HUD
             currentSelectedTarget = target;
             if (currentSelectedTarget != null)
             {
-                currentSelectedTarget.aIBehaviors.removed += OnTargetDied;
+                currentSelectedTarget.removed += OnTargetDied;
             }
-            Monster monster = target.currentTargetLevelData;
+            MonsterCfg monster = target.currentTargetLevelData.monster;
             radiusVisualizerController.SetupRadiusVisualizers(monster,target.transform);
             if (selectionChanged != null)
             {
@@ -136,7 +136,7 @@ namespace TargetDefense.UI.HUD
                 return;
             }
             int upgradeCost = currentSelectedTarget.GetCostForNextLevel();
-            bool successfulUpgrade = TargetDefense.Level.LevelManager.instance.currency.TryPurchase(upgradeCost);
+            bool successfulUpgrade = BattleField.instance.currency.TryPurchase(upgradeCost);
             if (successfulUpgrade) {
                 currentSelectedTarget.UpgradeTarget();
             }
@@ -155,9 +155,9 @@ namespace TargetDefense.UI.HUD
                 throw new InvalidOperationException("Selected Target is null");
             }
             int sellValue = currentSelectedTarget.GetSellLevel();
-            if (TargetDefense.Level.LevelManager.instanceExists && sellValue > 0)
+            if (sellValue > 0)
             {
-                TargetDefense.Level.LevelManager.instance.currency.AddCurrency(sellValue);
+                XEventBus.Instance.Post(EventId.AddCurrency, new XEventArgs(sellValue));
                 currentSelectedTarget.Sell();
             }
             DeselectTarget();
@@ -172,7 +172,7 @@ namespace TargetDefense.UI.HUD
 
             if (currentSelectedTarget != null)
             {
-                currentSelectedTarget.aIBehaviors.removed -= OnTargetDied;
+                currentSelectedTarget.removed -= OnTargetDied;
                 currentSelectedTarget.Show();
                 if (isRemoveSelectTarget) {
                     currentSelectedTarget.Sell();
@@ -290,7 +290,7 @@ namespace TargetDefense.UI.HUD
 
 
         //设置Ghost
-        public void SetToDragMode([NotNull] long towerId)
+        public void SetToDragMode([NotNull] int towerId)
         {
             if (state != State.Normal)
             {
@@ -306,7 +306,7 @@ namespace TargetDefense.UI.HUD
             SetState(State.BuildingWithDrag);
         }
          
-        public void SetToBuildMode([NotNull] long towerId)
+        public void SetToBuildMode([NotNull] int towerId)
         {
             if (state != State.Normal)
             {
@@ -322,7 +322,7 @@ namespace TargetDefense.UI.HUD
             SetState(State.Building);
         }
 
-        void SetUpGhostTarget([NotNull] long towerId)
+        void SetUpGhostTarget([NotNull] int towerId)
         {
             //if (towerId == null)
             //{
@@ -333,7 +333,7 @@ namespace TargetDefense.UI.HUD
             m_CurrentGhost.Hide();
         }
 
-        public void SetupRadiusVisualizer(Monster target, Transform ghost = null)
+        public void SetupRadiusVisualizer(MonsterCfg target, Transform ghost = null)
         {
             radiusVisualizerController.SetupRadiusVisualizers(target, ghost);
         }
@@ -451,7 +451,7 @@ namespace TargetDefense.UI.HUD
             {
                 return false;
             }
-            return TargetDefense.Level.LevelManager.instance.currency.CanAfford(m_CurrentGhost.defaultLevel.Cost);
+            return BattleField.instance.currency.CanAfford(m_CurrentGhost.defaultLevel.Cost);
         }
 
         protected virtual void MoveGhostOntoWorld(Ray ray, bool hideWhenInvalid)
@@ -559,7 +559,7 @@ namespace TargetDefense.UI.HUD
                     else
                     {
                         int cost = m_CurrentGhost.defaultLevel.Cost;
-                        bool successfulPurchase = TargetDefense.Level.LevelManager.instance.currency.TryPurchase(cost);
+                        bool successfulPurchase = BattleField.instance.currency.TryPurchase(cost);
                         if (successfulPurchase)
                         {
                             GameObject createdTarget = Instantiate(Resources.Load<GameObject>("Prefab/Game/Tower"), m_CurrentArea.transform);
@@ -591,7 +591,7 @@ namespace TargetDefense.UI.HUD
                             if (!target.isAtMaxLevel)
                             {
                                 int upgradeCost = target.GetCostForNextLevel();
-                                bool successfulUpgrade = TargetDefense.Level.LevelManager.instance.currency.TryPurchase(upgradeCost);
+                                bool successfulUpgrade = BattleField.instance.currency.TryPurchase(upgradeCost);
                                 if (successfulUpgrade)
                                 {
                                     target.UpgradeTarget();
@@ -632,7 +632,7 @@ namespace TargetDefense.UI.HUD
             //    {
             //        Tower target = GameData.TowerLibrary.configurations[0];
             //        int cost = target.purchaseCost;
-            //        bool successfulPurchase = TargetDefense.Level.LevelManager.instance.currency.TryPurchase(cost);
+            //        bool successfulPurchase = TargetDefense.Level.BattleSystem.instance.currency.TryPurchase(cost);
             //        if (successfulPurchase)
             //        {
             //            Tower createdTarget = Instantiate(target);

@@ -102,7 +102,7 @@ public class BuildingTower : MonoBehaviour
         CloseBuildingTree();
         Tower target = towerPrefab.GetComponent<Tower>();
         int cost = target.currentTargetLevelData.Cost;
-        bool successfulPurchase = TargetDefense.Level.LevelManager.instance.currency.TryPurchase(cost);
+        bool successfulPurchase = BattleField.instance.currency.TryPurchase(cost);
         if(successfulPurchase)
         {
             SingleTowerPlacementArea placementArea = Instantiate(buildingPlace).GetComponent<SingleTowerPlacementArea>();

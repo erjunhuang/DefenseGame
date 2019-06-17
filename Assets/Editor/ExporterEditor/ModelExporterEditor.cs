@@ -8,8 +8,8 @@ using UnityEngine.U2D;
 
 public class ModelExporterEditor : EditorWindow
 {
-    public static Dictionary<long, ResourcesPath> resourcesPathInfos = new Dictionary<long, ResourcesPath>();//所有可以升级的目标信息
-    protected ResourcesPath jsonData;
+    public static Dictionary<long, ResourcesPathCfg> resourcesPathInfos = new Dictionary<long, ResourcesPathCfg>();//所有可以升级的目标信息
+    protected ResourcesPathCfg jsonData;
     [MenuItem("Examples/创建模型")]
     static void CreateModelWithTemplate()
     {
@@ -23,7 +23,7 @@ public class ModelExporterEditor : EditorWindow
 
     static void LoadData() {
          
-        TextAsset resourcesPathConfig = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/Config/ResourcesPath.txt");
+        TextAsset resourcesPathConfig = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/Config/ResourcesPathCfg.txt");
         foreach (string str in resourcesPathConfig.text.Split(new[] { "\n" }, StringSplitOptions.None))
         {
             try
@@ -33,7 +33,7 @@ public class ModelExporterEditor : EditorWindow
                 {
                     continue;
                 }
-                ResourcesPath jsonData = JsonMapper.ToObject<ResourcesPath>(str2.Trim());
+                ResourcesPathCfg jsonData = JsonMapper.ToObject<ResourcesPathCfg>(str2.Trim());
                 resourcesPathInfos.Add(jsonData.Id,jsonData);
             }
             catch (Exception e)
@@ -44,7 +44,7 @@ public class ModelExporterEditor : EditorWindow
     }
     static void CreatePrefabWithData()
     {
-        foreach (ResourcesPath monsterResData in resourcesPathInfos.Values) {
+        foreach (ResourcesPathCfg monsterResData in resourcesPathInfos.Values) {
 
             string localPath = "Assets/Resources/Prefab/Monster/" + monsterResData.Id + ".prefab";
             if (AssetDatabase.LoadAssetAtPath(localPath, typeof(GameObject)))
@@ -67,7 +67,7 @@ public class ModelExporterEditor : EditorWindow
         }
     }
 
-    static void CreatePrefab(string localPath, ResourcesPath monsterResData)
+    static void CreatePrefab(string localPath, ResourcesPathCfg monsterResData)
     {
         string towerTemplatePath = "Assets/Resources/CopyModel/Tower.prefab";
         string agentTemplatePath = "Assets/Resources/CopyModel/Enemy.prefab";
@@ -101,7 +101,7 @@ public class ModelExporterEditor : EditorWindow
         }
     }
 
-    static GameObject CreateTower(GameObject obj, string localPath, ResourcesPath monsterResData) {
+    static GameObject CreateTower(GameObject obj, string localPath, ResourcesPathCfg monsterResData) {
         UnityEngine.Object prefab = PrefabUtility.CreateEmptyPrefab(localPath);
         GameObject temp = PrefabUtility.ReplacePrefab(obj, prefab, ReplacePrefabOptions.ConnectToPrefab);
 
@@ -121,7 +121,7 @@ public class ModelExporterEditor : EditorWindow
         return temp;
     }
 
-    static GameObject CreateAgent(GameObject obj, string localPath, ResourcesPath monsterResData)
+    static GameObject CreateAgent(GameObject obj, string localPath, ResourcesPathCfg monsterResData)
     {
         UnityEngine.Object prefab = PrefabUtility.CreateEmptyPrefab(localPath);
         GameObject temp = PrefabUtility.ReplacePrefab(obj, prefab, ReplacePrefabOptions.ConnectToPrefab);

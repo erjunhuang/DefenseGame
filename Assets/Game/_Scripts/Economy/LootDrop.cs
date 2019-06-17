@@ -1,4 +1,5 @@
 ﻿using Core.Health;
+using QGame.Core.Event;
 using TargetDefense.Level;
 using UnityEngine;
 
@@ -52,13 +53,7 @@ namespace TargetDefense.Economy
 			{
 				return;
 			}
-
-            TargetDefense.Level.LevelManager levelManager = TargetDefense.Level.LevelManager.instance;
-			if (levelManager == null)
-			{
-				return;
-			}
-			levelManager.currency.AddCurrency(lootDropped);
-		}
+            XEventBus.Instance.Post(EventId.AddCurrency, new XEventArgs(lootDropped));
+        }
 	}
 }

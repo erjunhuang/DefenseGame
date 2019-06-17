@@ -257,10 +257,7 @@ namespace AIBehaviorEditor
 				EditorGUILayout.Separator();
 				DrawAnimationCallbackSelection();
 
-                EditorGUILayout.Separator();
-                DrawSkillCallbackSelection();
-
-                m_Object.ApplyModifiedProperties();
+				m_Object.ApplyModifiedProperties();
 
 				// Draw Individual states below
 
@@ -489,26 +486,19 @@ namespace AIBehaviorEditor
 */
 			EditorGUILayout.Separator();
 
-            // Health
+			// Health
+			
+			//GUILayout.BeginVertical(GUI.skin.box);
+			//{
+			//	m_property = m_Object.FindProperty("health");
+			//	EditorGUILayout.PropertyField(m_property);
+			
+			//	m_property = m_Object.FindProperty("maxHealth");
+			//	EditorGUILayout.PropertyField(m_property);
+			//}
+			//GUILayout.EndVertical();
 
-            GUILayout.BeginVertical(GUI.skin.box);
-            {
-                m_property = m_Object.FindProperty("configuration.startingHealth");
-                EditorGUILayout.PropertyField(m_property);
-
-                m_property = m_Object.FindProperty("configuration.maxHealth");
-                EditorGUILayout.PropertyField(m_property);
-
-                m_property = m_Object.FindProperty("configuration.alignment");
-                EditorGUILayout.PropertyField(m_property);
-
-                m_property = m_Object.FindProperty("configuration.currentHealth");
-                EditorGUILayout.PropertyField(m_property);
-
-            }
-            GUILayout.EndVertical();
-
-            EditorGUILayout.Separator();
+			//EditorGUILayout.Separator();
 
 			// Custom variables
 
@@ -660,101 +650,7 @@ namespace AIBehaviorEditor
 		}
 
 
-        void DrawSkillCallbackSelection()
-        {
-            Component[] components = AIBehaviorsComponentInfoHelper.GetNonFSMComponents(fsm.gameObject);
-            List<Component> filteredComponents = new List<Component>();
-            Component animCallbackComp = m_Object.FindProperty("skillCallbackComponent").objectReferenceValue as Component;
-            string currentMethodName = m_Object.FindProperty("skillCallbackMethodName").stringValue;
-            List<string> componentNames = new List<string>();
-            Dictionary<string, List<string>> methodsList = new Dictionary<string, List<string>>();
-            int curComponentIndex = 0, newComponentIndex = 0;
-            int curMethodIndex = 0, newMethodIndex = 0;
-
-            GUILayout.BeginVertical(GUI.skin.box);
-
-            GUILayout.Label("Skill Component Callback: ", EditorStyles.boldLabel);
-
-            // Find the current component and potential components that can be a callback
-
-            for (int i = 0; i < components.Length; i++)
-            {
-                Component comp = components[i];
-                Type compType = comp.GetType();
-                MethodInfo[] methods = compType.GetMethods();
-
-                for (int m = 0; m < methods.Length; m++)
-                {
-                    MethodInfo mi = methods[m];
-                    ParameterInfo[] parms = mi.GetParameters();
-
-                    if (parms.Length == 1 && parms[0].ParameterType == typeof(SkillData))
-                    {
-                        string componentName = compType.ToString();
-
-                        if (animCallbackComp != null && compType == animCallbackComp.GetType())
-                        {
-                            curComponentIndex = componentNames.Count;
-                        }
-
-                        if (!methodsList.ContainsKey(componentName))
-                        {
-                            methodsList[componentName] = new List<string>();
-                        }
-
-                        if (currentMethodName == mi.Name)
-                        {
-                            curMethodIndex = methodsList[componentName].Count;
-                        }
-
-                        filteredComponents.Add(comp);
-                        componentNames.Add(componentName);
-                        methodsList[componentName].Add(mi.Name);
-                    }
-                    else if (animCallbackComp == comp)
-                    {
-                        animCallbackComp = null;
-                    }
-                }
-            }
-
-            // If no component was found, show a code sample
-            if (componentNames.Count == 0)
-            {
-                AIBehaviorsCodeSampleGUI.Draw(typeof(SkillData), "skillData", "OnSkillState");
-            }
-            else
-            {
-                GUILayoutOption widthOption = GUILayout.MinWidth(75);
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Component: ", widthOption);
-                newComponentIndex = EditorGUILayout.Popup(curComponentIndex, componentNames.ToArray());
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Method: ", widthOption);
-                newMethodIndex = EditorGUILayout.Popup(curMethodIndex, methodsList[componentNames[curComponentIndex]].ToArray());
-                GUILayout.EndHorizontal();
-
-                if (curComponentIndex != newComponentIndex || animCallbackComp == null)
-                {
-                    m_Object.FindProperty("skillCallbackComponent").objectReferenceValue = filteredComponents[newComponentIndex];
-                }
-
-                string curComponentName = componentNames[curComponentIndex];
-                string curMethodName = m_Object.FindProperty("skillCallbackMethodName").stringValue;
-                string methodListIndexName = methodsList[curComponentName][newMethodIndex];
-
-                if (curMethodName != methodListIndexName || currentMethodName == "" || currentMethodName == null)
-                {
-                    m_Object.FindProperty("skillCallbackMethodName").stringValue = methodListIndexName;
-                }
-            }
-
-            GUILayout.EndVertical();
-        }
-
-        void OnSceneGUI()
+		void OnSceneGUI()
 		{
 			if ( curStateSelection != prevStateSelection )
 				EditorUtility.SetDirty(fsm.GetStateByIndex(curStateSelection));

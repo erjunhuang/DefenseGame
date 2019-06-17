@@ -12,23 +12,24 @@ namespace AIBehavior
 	{
 		public float distanceThreshold = 1.0f;
 		public DistanceNegotiation negotiationMode = DistanceNegotiation.Default;
+        public Transform center;
 
-
-		protected override bool Evaluate(AIBehaviors fsm)
+        protected override bool Evaluate(AIBehaviors fsm)
 		{
 			Transform[] tfms = objectFinder.GetTransforms();
 			bool result = false;
-            if ( tfms.Length > 0 )
+
+			if ( tfms.Length > 0 )
 			{
-				Vector3 thisTFMPos = fsm.transform.position;
+				Vector3 thisTFMPos = center.transform.position;
 				float sqrDistanceThreshold = distanceThreshold * distanceThreshold;
 				DistanceNegotiation negotiationMode = GetNegotiationMode();
 
-				for ( int i = 0; i < tfms.Length; i++ )
+                for ( int i = 0; i < tfms.Length; i++ )
 				{
 					Vector3 targetDir = tfms[i].position - thisTFMPos;
-				
-					if ( Compare(targetDir.sqrMagnitude, sqrDistanceThreshold) )
+
+                    if ( Compare(targetDir.sqrMagnitude, sqrDistanceThreshold) )
 					{
 						if ( negotiationMode == DistanceNegotiation.Any )
 						{
@@ -65,21 +66,23 @@ namespace AIBehavior
 			return negotiationMode;
 		}
 
-
-		protected abstract bool ResultForNoTaggedObjectsFound();
+        protected abstract bool ResultForNoTaggedObjectsFound();
 		protected abstract DistanceNegotiation GetDefaultNegotiationMode();
 		protected abstract bool Compare(float sqrMagnitude, float sqrThreshold);
 
 
 #if UNITY_EDITOR
 		public override void DrawInspectorProperties(AIBehaviors fsm, SerializedObject sObject)
-		{
+		{ 
 			SerializedProperty distanceProperty = sObject.FindProperty("distanceThreshold");
 			SerializedProperty negotiationModeProperty = sObject.FindProperty("negotiationMode");
+            SerializedProperty centerProperty = sObject.FindProperty("center");
 
-			EditorGUILayout.PropertyField(distanceProperty, new GUIContent("Distance"));
+
+            EditorGUILayout.PropertyField(distanceProperty, new GUIContent("Distance"));
 			EditorGUILayout.PropertyField(negotiationModeProperty, new GUIContent("Check Mode"));
-		}
+            EditorGUILayout.PropertyField(centerProperty, new GUIContent("CenterPos"));
+        }
 
 
 		protected virtual Color GetGizmoColor()
@@ -90,7 +93,7 @@ namespace AIBehavior
 
 		public override void DrawGizmos(AIBehaviors fsm)
 		{
-			Transform tfm = fsm.transform;
+			Transform tfm = center.transform;
 
 			Handles.color = GetGizmoColor();
 

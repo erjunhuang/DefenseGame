@@ -1,5 +1,6 @@
 ﻿using ActionGameFramework.Health;
 using GameModel;
+using QGame.Core.Config;
 using System.Collections;
 using System.Collections.Generic;
 using TargetDefense.Targets;
@@ -9,17 +10,17 @@ using UnityEngine;
 public class TargetGhost : MonoBehaviour
 {
     protected SpriteRenderer spriteRenderer;
-    public long towerId { get; private set; }
+    public int towerId { get; private set; }
     public Collider ghostCollider { get; private set; }
-    public Monster defaultLevel;
+    public MonsterCfg defaultLevel;
 
-    public virtual void Initialize(long towerId)
+    public virtual void Initialize(int towerId)
     {
         spriteRenderer =transform.Find("Body").GetComponent<SpriteRenderer>();
         this.towerId = towerId;
         if (GameUIManager.instanceExists)
         {
-           defaultLevel = GameData.monsters[towerId];
+            defaultLevel = ConfigService.Instance.MonsterCfgList.GetOne(towerId);
            GameUIManager.instance.SetupRadiusVisualizer(defaultLevel, transform);
         }
         ghostCollider = GetComponent<Collider>();

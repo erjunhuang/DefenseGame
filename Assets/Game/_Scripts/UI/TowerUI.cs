@@ -33,7 +33,7 @@ public class TowerUI : MonoBehaviour
             GameUIManager.instance.selectionChanged += OnUISelectionChanged;
             GameUIManager.instance.stateChanged += OnGameUIStateChanged;
         }
-
+         
     }
 
     // Update is called once per frame
@@ -69,7 +69,7 @@ public class TowerUI : MonoBehaviour
         if (upgradeButton != null)
         {
             upgradeButton.interactable =
-                TargetDefense.Level.LevelManager.instance.currency.CanAfford(myTower.GetCostForNextLevel());
+                BattleField.instance.currency.CanAfford(myTower.GetCostForNextLevel());
             bool maxLevel = target.isAtMaxLevel;
             upgradeButton.gameObject.SetActive(!maxLevel);
             if (!maxLevel)
@@ -77,26 +77,18 @@ public class TowerUI : MonoBehaviour
                 //Debug.Log(target.GetNextUpgradeAgents()[0].UpgradeDescription.ToUpper());
             }
         }
-
-        TargetDefense.Level.LevelManager.instance.currency.currencyChanged += OnCurrencyChanged;
+        XEventBus.Instance.Register(EventId.CurrencyChanged, OnCurrencyChanged);
     }
 
-    void OnCurrencyChanged()
-    {
+    public void OnCurrencyChanged(XEventArgs args)
+    {   
         if (myTower != null && upgradeButton != null)
         {
             upgradeButton.interactable =
-                TargetDefense.Level.LevelManager.instance.currency.CanAfford(myTower.GetCostForNextLevel());
+                BattleField.instance.currency.CanAfford(myTower.GetCostForNextLevel());
         }
     }
 
-    protected virtual void OnDisable()
-    {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            TargetDefense.Level.LevelManager.instance.currency.currencyChanged -= OnCurrencyChanged;
-        }
-    }
     public virtual void Hide()
     {
         myTower = null;
@@ -105,7 +97,7 @@ public class TowerUI : MonoBehaviour
             GameUIManager.instance.HideRadiusVisualizer();
         }
         this.gameObject.SetActive(false);
-        TargetDefense.Level.LevelManager.instance.currency.currencyChanged -= OnCurrencyChanged;
+        XEventBus.Instance.UnRegister(EventId.CurrencyChanged, OnCurrencyChanged);
     }
     void OnGameUIStateChanged(GameUIManager.State oldState, GameUIManager.State newState)
     {
@@ -135,6 +127,8 @@ public class TowerUI : MonoBehaviour
             GameUIManager.instance.selectionChanged -= OnUISelectionChanged;
             GameUIManager.instance.stateChanged -= OnGameUIStateChanged;
         }
+
+         
     }
 
     private void OnUpgradeClick(PointerEventData eventData, GameObject go)

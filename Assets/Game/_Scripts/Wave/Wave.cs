@@ -6,6 +6,7 @@ using TargetDefense.Nodes;
 using UnityEngine;
 using TargetDefense.Economy;
 using AIBehavior;
+using QGame.Core.Config;
 
 namespace TargetDefense.Level
 {
@@ -14,10 +15,10 @@ namespace TargetDefense.Level
 	/// </summary>
 	public class Wave : TimedBehaviour
 	{
-		/// <summary>
-		/// A list of instructions on how to spawn enemies
-		/// </summary>
-		public List<SpawnInstructionInfo> spawnInstructions = new List<SpawnInstructionInfo>();
+        /// <summary>
+        /// A list of instructions on how to spawn enemies
+        /// </summary>
+        public List<SpawnInstructionInfo> spawnInstructions;
 
 		/// <summary>
 		/// The index of the current enemy to spawn
@@ -112,23 +113,7 @@ namespace TargetDefense.Level
             int agentId = spawnInstructionInfo.agentId;
             int nodeIndex = spawnInstructionInfo.startingNode;
 
-
-            Node node = LevelManager.instance.Nodes[nodeIndex];
-
-            //var poolable = Poolable.TryGetPoolable<Poolable>(agentConfig.agentPrefab);
-            //if (poolable == null)
-            //{
-            //	return;
-            //}
-
-            GameObject poolable = Instantiate(Resources.Load<GameObject>("Prefab/Game/Enemy"));
-            poolable.transform.position = node.transform.position;
-            poolable.transform.rotation = node.transform.rotation;
- 
-
-            EnemyAgent enemyAgent = poolable.GetComponent<EnemyAgent>();
-            object[] myObjArray = { node };
-            enemyAgent.Initialize(agentId, myObjArray);
+            BattleField.instance.SpawnAgent(new PlayInfo(ConfigService.Instance.MonsterCfgList.GetOne(agentId)), nodeIndex);
         }
 
         /// <summary>

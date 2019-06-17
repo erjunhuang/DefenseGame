@@ -19,7 +19,7 @@ public class RadiusVisualizerController : MonoBehaviour {
 		
 	}
 
-    public void SetupRadiusVisualizers(Monster target, Transform ghost) {
+    public void SetupRadiusVisualizers(MonsterCfg target, Transform ghost) {
       
         if (m_RadiusVisualizers.Count < 1)
         {

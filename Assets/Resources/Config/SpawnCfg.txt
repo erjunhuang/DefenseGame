@@ -1,0 +1,3 @@
+﻿{"Id":1,"agentId":10001,"delayToSpawn":0,"startingNode":0}
+{"Id":2,"agentId":10002,"delayToSpawn":0,"startingNode":1}
+{"Id":3,"agentId":10001,"delayToSpawn":1,"startingNode":0}

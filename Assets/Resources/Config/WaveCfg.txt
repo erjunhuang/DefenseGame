@@ -1,0 +1,2 @@
+﻿{"Id":1,"timeToNextWave":10,"monsterInfo":[1,2]}
+{"Id":2,"timeToNextWave":5,"monsterInfo":[1,2,3]}

@@ -1,5 +1,4 @@
 using UnityEngine;
-using Core.Health;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -36,16 +35,12 @@ namespace AIBehavior
 		// === Animation Variables === //
 
 		public AIAnimationStates animationStatesComponent;
-		public AIAnimationState[] animationStates = new AIAnimationState[0];
-		protected virtual bool playAnimation { get { return false; } }
+		public AIAnimationState[] animationStates = new AIAnimationState[1];
+		protected virtual bool playAnimation { get { return true; } }
 
-        // === Skill Variables === //
+		// === Audio Variables === //
 
-        public AISkillStates skillStatesComponent;
-        public AISkillState[] skillStates = new AISkillState[0];
-        // === Audio Variables === //
-
-        [System.Serializable]
+		[System.Serializable]
 		public class Sound
 		{
 			public AudioClip audioClip = null;
@@ -106,27 +101,31 @@ namespace AIBehavior
 		{
             objectFinder = CreateObjectFinder();
         }
-
-
-        protected virtual TaggedObjectFinder CreateObjectFinder()
-        {
-            return new TaggedObjectFinder();
-        }
+		
+		
+		protected virtual TaggedObjectFinder CreateObjectFinder()
+		{
+			return new TaggedObjectFinder();
+		}
 
 
         protected virtual void Awake()
+        {
+        }
+
+        protected virtual void InitializeFinder(AIBehaviors fsm)
 		{
+            objectFinder.Initialize(fsm.levelAgent.configuration.alignment);
 		}
 
 
 		public virtual void InitState(AIBehaviors fsm)
 		{
-            objectFinder.Initialize(fsm.configuration.alignment);
-
+            InitializeFinder(fsm);
             lastActionTime = Time.time;
 			deltaTime = 0.0f;
 
-            InitObjectFinder(fsm);
+			InitObjectFinder(fsm);
 			InitTriggers(fsm);
 			Init(fsm);
 
@@ -134,6 +133,7 @@ namespace AIBehavior
 			{
 				PlayRandomAnimation(fsm);
 			}
+
 			if (spawnItemsOnStateEnter) 
 			{
 				SpawnItems (fsm);
@@ -164,8 +164,23 @@ namespace AIBehavior
 			StateEnded(fsm);
 		}
 
+        public T GetTrigger<T>() where T : BaseTrigger
+        {
+            foreach (BaseTrigger trigger in triggers)
+            {
+                if (trigger is T)
+                {
+                    return trigger as T;
+                }
+                else
+                {
+                    return trigger.GetTrigger<T>();
+                }
+            }
+            return null;
+        }
 
-		private void InitTriggers(AIBehaviors fsm)
+        private void InitTriggers(AIBehaviors fsm)
 		{
 			foreach ( BaseTrigger trigger in triggers )
 			{
@@ -247,9 +262,9 @@ namespace AIBehavior
 			fsm.PlayAnimation(animationStates[animationIndex]);
 		}
 
-        // === Item Spawning === //
+		// === Item Spawning === //
 
-        void SpawnItems(AIBehaviors fsm)
+		void SpawnItems(AIBehaviors fsm)
 		{
 			if (spawnableItems.Length > 0) 
 			{
@@ -364,9 +379,8 @@ namespace AIBehavior
 			SerializedObject m_Object = new SerializedObject(this);
 
 			AIBehaviorsAnimationEditorGUI.OnInspectorEnabled(m_ParentObject, m_Object);
-            AIBehaviorsSkillEditorGUI.OnInspectorEnabled(m_ParentObject, m_Object);
 
-            OnStateInspectorEnabled(m_ParentObject);
+			OnStateInspectorEnabled(m_ParentObject);
 		}
 
 
@@ -561,10 +575,7 @@ namespace AIBehavior
 		{
 			AIBehaviorsAnimationEditorGUI.DrawAnimationFields(mObject, UsesMultipleAnimations());
 			EditorGUILayout.Separator();
-
-            AIBehaviorsSkillEditorGUI.DrawAnimationFields(mObject, UsesMultipleSkills());
-            EditorGUILayout.Separator();
-        }
+		}
 
 
 		protected virtual bool UsesMultipleAnimations()
@@ -572,12 +583,8 @@ namespace AIBehavior
 			return true;
 		}
 
-        protected virtual bool UsesMultipleSkills()
-        {
-            return true;
-        }
 
-        public void DrawPlayerFields(SerializedObject m_ParentObject)
+		public void DrawPlayerFields(SerializedObject m_ParentObject)
 		{
 			SerializedProperty m_Prop = m_ParentObject.FindProperty("checkForNewPlayersInterval");
 			EditorGUILayout.PropertyField(m_Prop);

@@ -1,15 +1,21 @@
-﻿using GameModel;
+﻿using System;
+using GameModel;
 using QGame.Core.Event;
 using TargetDefense.Level;
 using TargetDefense.Targets;
 using TargetDefense.Targets.Data;
 using TargetDefense.UI.HUD;
 using UnityEngine;
-     
+
 public class BuildSidebar : MonoBehaviour
 {
     public TargetSpawnButton towerSpawnButton;
-    protected virtual void Start()
+    private void Awake()
+    {
+        XEventBus.Instance.Register(EventId.SpawningEnemies, SpawningEnemies);
+    }
+
+    private void SpawningEnemies(XEventArgs args)
     {
         foreach (int towerId in GameData.gameInfo.towersInfo)
         {
@@ -20,7 +26,7 @@ public class BuildSidebar : MonoBehaviour
         }
     }
 
-    void OnButtonTapped(long towerId)
+    void OnButtonTapped(int towerId)
     {
         var gameUI = GameUIManager.instance;
         if (gameUI.isBuilding)
@@ -30,7 +36,7 @@ public class BuildSidebar : MonoBehaviour
         gameUI.SetToBuildMode(towerId);
     }
 
-    void OnButtonDraggedOff(long towerId)
+    void OnButtonDraggedOff(int towerId)
     {
         if (!GameUIManager.instance.isBuilding)
         {
@@ -47,38 +53,8 @@ public class BuildSidebar : MonoBehaviour
             towerButton.buttonTapped -= OnButtonTapped;
             towerButton.draggedOff -= OnButtonDraggedOff;
         }
-    }
 
-
-    /// <summary>
-    /// Raises the enable event.
-    /// </summary>
-    void OnEnable()
-    {
-        XEventBus.Instance.Register(EventId.WaveStart, StartWaveButtonPressed);
+        XEventBus.Instance.UnRegister(EventId.SpawningEnemies, SpawningEnemies);
     }
-
-    /// <summary>
-    /// Raises the disable event.
-    /// </summary>
-    void OnDisable()
-    {
-        XEventBus.Instance.UnRegister(EventId.WaveStart, StartWaveButtonPressed);
-    }
-
-    public void StartWaveButtonPressed(XEventArgs args)
-    {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            TargetDefense.Level.LevelManager.instance.BuildingCompleted();
-        }
-    }
-
-    public void AddCurrency(int amount)
-    {
-        if (TargetDefense.Level.LevelManager.instanceExists)
-        {
-            TargetDefense.Level.LevelManager.instance.currency.AddCurrency(amount);
-        }
-    }
+ 
 }

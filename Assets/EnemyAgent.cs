@@ -14,27 +14,18 @@ using UnityEngine.AI;
 
 public class EnemyAgent : LevelAgent
 {
-    private LevelManager m_LevelManager;
-    protected Node node;
-    public override void Initialize(long monsterId, params object[] args)
+    public override void Initialize(int monsterId, params object[] args)
     {
         base.Initialize(monsterId,args);
-        if (this.tag == "Enemy")
-        {
-            m_LevelManager.IncrementNumberOfEnemies();
-        }
     }
     protected override void LazyLoad()
     {
         base.LazyLoad();
-        if (m_LevelManager == null)
-        {
-            m_LevelManager = LevelManager.instance;
-        }
     }
+
     protected override GameObject Create()
     {
-        long id = currentTargetLevelData.Id;
+        long id = currentTargetLevelData.monster.Id;
         GameObject agent = Instantiate(Resources.Load<GameObject>("Prefab/Monster/" + id), transform);
 
         LootDrop lootDrop = GetComponentInParent<LootDrop>();
@@ -43,9 +34,18 @@ public class EnemyAgent : LevelAgent
         AIBehaviors ai = GetComponentInParent<AIBehaviors>();
         CharacterAnimator characterAnimator = GetComponentInParent<CharacterAnimator>();
 
-        AIPatrolState aiPatrolState = ai.GetState<AIPatrolState>();
-        aiPatrolState.currentNode = (Node)args[0];
+        Node node = (Node)args[0];
+        //OffensiveState offensiveState = ai.GetState<OffensiveState>();
+        //offensiveState.currentNode = node;
+        //offensiveState.GetTrigger<WithinDistanceTrigger>().center = transform;
 
+
+        PatrolState patrolState = ai.GetState<PatrolState>();
+        patrolState.SetPatrolPoints(node.transform.parent);
+        patrolState.GetTrigger<WithinDistanceTrigger>().center = transform;
+
+        //AttackState attackState = ai.GetState<AttackState>();
+        //attackState.GetTrigger<BeyondDistanceTrigger>().center = transform;
         //动画
         Animator animator = agent.GetComponent<Animator>();
         RuntimeAnimatorController runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("Model/" + id + "/Animation/Controller");
@@ -60,27 +60,31 @@ public class EnemyAgent : LevelAgent
          
 
         //信息
-        unitInfo.unitName = currentTargetLevelData.Name;
-        unitInfo.primaryText = currentTargetLevelData.LootDropped.ToString();
-        unitInfo.secondaryText = currentTargetLevelData.PhyAttackMin + "-" + currentTargetLevelData.PhyAttackMax;
+        unitInfo.unitName = currentTargetLevelData.monster.Name;
+        unitInfo.primaryText = currentTargetLevelData.monster.LootDropped.ToString();
+        unitInfo.secondaryText = currentTargetLevelData.monster.PhyAttackMin + "-" + currentTargetLevelData.monster.PhyAttackMax;
 
         //属性
+        lootDrop.lootDropped = currentTargetLevelData.monster.LootDropped;
         UnityEngine.Object alignment = Resources.Load("Data/Alignment/EnemyAlignment");
-        lootDrop.lootDropped = currentTargetLevelData.LootDropped;
-        //currentTargetLevelData.MaxHealth = 500;
+
+        if (this.configuration.alignment == null)
+        {
+            this.configuration.alignment = new SerializableIAlignmentProvider();
+            this.configuration.alignment.unityObjectReference = alignment;
+        }else{
+            this.configuration.alignment.unityObjectReference = alignment;
+        }
+         
         //总开关
         damageTaker.Initialize();
-
-        ai.Initialize(currentTargetLevelData, alignment);
+        ai.Initialize();
+        this.gameObject.name = id.ToString();
         return agent;
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
-        if (this.tag == "Enemy")
-        {
-            m_LevelManager.DecrementNumberOfEnemies();
-        }
     }
 }

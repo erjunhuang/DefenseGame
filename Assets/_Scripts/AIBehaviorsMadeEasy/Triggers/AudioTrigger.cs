@@ -22,7 +22,7 @@ namespace AIBehavior
 		{
 			base.Awake ();
 
-			if ( audioCachePoint == CachePoint.Init )
+			if ( audioCachePoint == CachePoint.Awake )
 			{
 				UpdateAudioSources();
 			}

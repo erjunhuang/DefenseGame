@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using Core.Health;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -26,32 +25,50 @@ namespace AIBehavior
 		{
             objectFinder = CreateObjectFinder();
         }
+		
+		
+		protected virtual TaggedObjectFinder CreateObjectFinder()
+		{
+			return new TaggedObjectFinder();
+		}
 
 
-        protected virtual TaggedObjectFinder CreateObjectFinder()
-        {
-            return new TaggedObjectFinder();
-        }
-
-
-        protected virtual void Init(AIBehaviors fsm) {}
+		protected virtual void Init(AIBehaviors fsm) {}
 		protected abstract bool Evaluate(AIBehaviors fsm);
 
 
-		protected virtual void Awake()
+        public T GetTrigger<T>() where T : BaseTrigger
+        {
+            foreach (BaseTrigger trigger in subTriggers)
+            {
+                if (trigger is T)
+                {
+                    return trigger as T;
+                }
+                else
+                {
+                    return trigger.GetTrigger<T>();
+                }
+            }
+            return null;
+        }
+
+        protected virtual void Awake() {
+            for (int i = 0; i < subTriggers.Length; i++)
+            {
+                subTriggers[i].parentTrigger = this;
+            }
+        }
+
+        protected virtual void InitializeFinder(AIBehaviors fsm)
 		{
+            objectFinder.Initialize(fsm.levelAgent.configuration.alignment);
 		}
 
 
 		public void HandleInit(AIBehaviors fsm, TaggedObjectFinder parentObjectFinder)
 		{
-
-            objectFinder.Initialize(fsm.configuration.alignment);
-
-            for (int i = 0; i < subTriggers.Length; i++)
-            {
-                subTriggers[i].parentTrigger = this;
-            }
+            InitializeFinder(fsm);
 
             if ( !objectFinder.useCustomTags )
 			{

@@ -12,8 +12,7 @@ namespace AIBehavior
 		public bool rotatesTowardTarget = false;
 		private GameObject targetRotationObject = null;
 
-
-		protected override void Init(AIBehaviors fsm)
+        protected override void Init(AIBehaviors fsm)
 		{
 			Transform fsmTFM = fsm.transform;
 			Transform targetRotationTFM;
@@ -52,8 +51,8 @@ namespace AIBehavior
 		{
 			if ( !rotatesTowardTarget )
 			{
-				fsm.MoveAgent(fsm.transform, 0.0f, rotationSpeed);
-			}
+                fsm.MoveAgent(fsm.transform, 0.0f, rotationSpeed);
+            }
 			else
 			{
 				Transform target = fsm.GetClosestPlayer(objectFinder.GetTransforms());

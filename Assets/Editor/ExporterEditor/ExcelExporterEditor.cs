@@ -60,7 +60,7 @@ public class ExcelExporterEditor : EditorWindow
 			{
 				this.isClient = true;
                 ExportAll(clientPath);
-                ExportAllClass(@"./Assets/Game/_Scripts/GameModel", "namespace GameModel\n{\n");
+                ExportAllClass(@"./Assets/Game/_Scripts/GameModel", "using QGame.Core.Config;\n namespace GameModel\n{\n");
                 //ExportAllClass(@"./Assets/Model/Module/Demo/Config", "namespace ETModel\n{\n");
                 //ExportAllClass(@"./Assets/Hotfix/Module/Demo/Config", "using ETModel;\n\nnamespace ETHotfix\n{\n");
 
@@ -150,9 +150,9 @@ public class ExcelExporterEditor : EditorWindow
             StringBuilder sb = new StringBuilder();
             sb.Append(csHead);
 
-            sb.Append($"\tpublic class {protoName}\n");
+            sb.Append($"\tpublic class {protoName} :ConfigBase\n");
             sb.Append("\t{\n");
-            sb.Append("\t\tpublic long Id { get; set; }\n");
+            //sb.Append("\t\tpublic int Id { get; set; }\n");
 
             DataTable dataTable = OpenCSV(fileName, 0, 0, 0, 0, true);
             for (int j = 0; j < dataTable.Columns.Count; ++j)
@@ -190,7 +190,6 @@ public class ExcelExporterEditor : EditorWindow
         {
             for (int i = 2; i < dataTable.Rows.Count; ++i)
             {
-                Debug.Log(dataTable.Rows[i][0]);
                 if (dataTable.Rows[i][0].ToString() == "")
                 {
                     continue;

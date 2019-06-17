@@ -9,7 +9,7 @@ namespace AIBehavior
 {
 	public class InPlayerViewTrigger : BaseTrigger
 	{
-		public CachePoint updateViewBounds = CachePoint.Init;
+		public CachePoint updateViewBounds = CachePoint.Awake;
 		protected Camera mainCamera = null;
 		protected Bounds viewBounds;
 
@@ -18,7 +18,7 @@ namespace AIBehavior
 		{
 			base.Awake ();
 
-			if ( updateViewBounds == CachePoint.Init )
+			if ( updateViewBounds == CachePoint.Awake )
 			{
 				viewBounds = GetCombinedBounds(transform.parent);
 			}

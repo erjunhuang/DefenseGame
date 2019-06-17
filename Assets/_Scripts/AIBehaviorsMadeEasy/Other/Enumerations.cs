@@ -3,17 +3,7 @@ using System.Collections;
 
 namespace AIBehavior
 {
-
-    public enum SearchType
-    {
-        Enemy,
-        Friend,
-        All
-    }
-
-
-
-    public enum AnimationType
+	public enum AnimationType
 	{
 		Auto,
 		Mecanim,
@@ -24,7 +14,7 @@ namespace AIBehavior
 
 	public enum CachePoint
 	{
-        Init,
+		Awake,
 		StateChanged,
 		EveryFrame
 	}

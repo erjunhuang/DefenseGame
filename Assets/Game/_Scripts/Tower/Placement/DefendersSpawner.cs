@@ -17,7 +17,7 @@ public class DefendersSpawner : MonoBehaviour
     // Max number of spawned obects in buffer
     public int maxNum = 2;
     // Spawned object prefab
-    public long defenderId;
+    public int defenderId;
     // Position for spawning
     public Transform spawnPoint;
 
@@ -132,7 +132,7 @@ public class DefendersSpawner : MonoBehaviour
         EnemyAgent enemyAgent = obj.GetComponent<EnemyAgent>();
         enemyAgent.Initialize(defenderId);
 
-        obj.GetComponent<AIBehaviors>().removed += UnitDie;
+        obj.GetComponent<LevelAgent>().removed += UnitDie;
         // Add spawned object to buffer
         defendersList.Add(obj, destination);
 	}

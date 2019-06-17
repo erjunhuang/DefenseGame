@@ -1,12 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.AI;
-using Core.Health;
-using GameModel;
-using ActionGameFramework.Health;
-using QGame.Core.FightEnegin;
-using QGame.Core.FightEnegin.Damage;
-using QGame.Core.FightEnegin.Damage.Buff;
 
 #if UNITY_EDITOR
 using System.Reflection;
@@ -21,9 +15,8 @@ namespace AIBehavior
 	/// This class is the brain of the AIBehavior system. It controls state changes and various callbacks.
 	/// </summary>
 	[RequireComponent(typeof(AIAnimationStates))]
-    [RequireComponent(typeof(AISkillStates))]
-    public class AIBehaviors : Targetable
-    {
+	public class AIBehaviors : AIComponent
+	{
 		/// <summary>
 		/// Is this AI active (Read Only)?
 		/// </summary>
@@ -33,12 +26,6 @@ namespace AIBehavior
 		/// Is this AI in defensive mode?
 		/// </summary>
 		public bool isDefending = false;
-
-		/// <summary>
-		/// This is a multiplier for the amount of damage this AI will receive
-		/// </summary>
-		[SerializeField] protected float damageMultiplier = 1.0f;
-
 		/// <summary>
 		/// The number of possible states this AI has.
 		/// </summary>
@@ -130,28 +117,22 @@ namespace AIBehavior
 		/// </summary>
 		public Component animationCallbackComponent = null;
 
-        public Component skillCallbackComponent = null;
+		/// <summary>
+		/// The name of the method that should be called when a new animation should play.
+		/// </summary>
+		public string animationCallbackMethodName = "";
 
-        /// <summary>
-        /// The name of the method that should be called when a new animation should play.
-        /// </summary>
-        public string animationCallbackMethodName = "";
+		/// <summary>
+		/// This is the list of available animation states for the AI
+		/// </summary>
+		public AIAnimationStates animationStates;
 
-        public string skillCallbackMethodName = "";
+		// === Delegates === //
 
-        /// <summary>
-        /// This is the list of available animation states for the AI
-        /// </summary>
-        public AIAnimationStates animationStates;
-
-
-        public AISkillStates skillStates;
-        // === Delegates === //
-
-        /// <summary>
-        /// This delegate is used for the 'onStateChanged' callback
-        /// </summary>
-        public delegate void StateChangedDelegate(BaseState newState, BaseState previousState);
+		/// <summary>
+		/// This delegate is used for the 'onStateChanged' callback
+		/// </summary>
+		public delegate void StateChangedDelegate(BaseState newState, BaseState previousState);
 
 		/// <summary>
 		/// Any time a state changes, this delegate is called.
@@ -168,16 +149,10 @@ namespace AIBehavior
 		/// </summary>
 		public AnimationCallbackDelegate onPlayAnimation = null;
 
-
-      
-		public delegate void  SkillCallbackDelegate(SkillData animationState);
-      
-        public SkillCallbackDelegate onPlaySkill = null;
-
-        /// <summary>
-        /// This delegate is used for the 'externalMove' callback
-        /// </summary>
-        public delegate void ExternalMoveDelegate(Vector3 targetPoint, float targetSpeed, float rotationSpeed);
+		/// <summary>
+		/// This delegate is used for the 'externalMove' callback
+		/// </summary>
+		public delegate void ExternalMoveDelegate(Vector3 targetPoint, float targetSpeed, float rotationSpeed);
 
 		/// <summary>
 		/// This delegate is called whenever a custom or 3rd party navigation system needs new location data.
@@ -199,14 +174,11 @@ namespace AIBehavior
 		// AI Behaviors custom variables
 		public AiBehaviorVariable[] userVariables = new AiBehaviorVariable[0];
 
+        //指定的敌人
+        public Transform target;
+		// === Methods === //
 
-        public Monster monsterInfo { get; private set; }
-
-        public Dictionary<eBuffType, BuffBase> list_buff = new Dictionary<eBuffType, BuffBase>();
-
-        // === Methods === //
-
-        public AIBehaviors()
+		public AIBehaviors()
 		{
             objectFinder = CreateObjectFinder();
         }
@@ -217,52 +189,17 @@ namespace AIBehavior
 			return new TaggedObjectFinder();
 		}
 
-        public float GetHealthValue()
+        public LevelAgent levelAgent;
+        public virtual void Initialize()
         {
-            return this.configuration.currentHealth;
-        }
 
-        public override void Remove()
-        {
-            base.Remove();
-            RemoveAllBuff();
-            Destroy(this.gameObject);
-        }
-
-
-        protected override void Awake()
-        {
-            base.Awake();
-        }
-        public virtual void Initialize(Monster monsterInfo, Object alignment) {
-
-            this.monsterInfo = monsterInfo;
-            InitData(monsterInfo.MaxHealth, alignment);
             Init();
             InitialState();
         }
-
-        public void InitData(float maxHealth, Object alignment)
+        protected virtual void InitializeFinder(AIBehaviors fsm)
         {
-            //health = healthAmount;
-            this.configuration.SetMaxHealth(maxHealth);
-            this.configuration.SetHealth(maxHealth);
-
-            if (this.configuration.alignment == null)
-            {
-                this.configuration.alignment = new SerializableIAlignmentProvider();
-                this.configuration.alignment.unityObjectReference = alignment;
-            }
-
-            objectFinder.Initialize(this.configuration.alignment);
-             
-            //BuffInfo buffInfo = new BuffInfo();
-            //buffInfo.AllValue = 500;
-            //buffInfo.buffType = eBuffType.heal;
-            //buffInfo.durationTime = 10f;
-            //AddBuff(BuffBase.GetBuff(buffInfo,this,this));
+            objectFinder.Initialize(fsm.levelAgent.configuration.alignment);
         }
-
         void Init()
 		{
 			#if USE_ASTAR
@@ -271,8 +208,10 @@ namespace AIBehavior
 
 			aiTransform = GetTransform();
 			animationStates = aiTransform.GetComponent<AIAnimationStates>();
-            skillStates = aiTransform.GetComponent<AISkillStates>();
-            navMeshAgent = aiTransform.GetComponent<NavMeshAgent>();
+			navMeshAgent = aiTransform.GetComponent<NavMeshAgent>();
+            levelAgent = aiTransform.GetComponent<LevelAgent>();
+
+            InitializeFinder(this);
 
             InitGlobalTriggers();
 
@@ -282,9 +221,8 @@ namespace AIBehavior
 				sightTransform.parent = aiTransform;
 				sightTransform.localRotation = Quaternion.identity;
 				sightTransform.localPosition = eyePosition;
-                //useSightTransform = false;
-                useSightTransform = true;
-            }
+				useSightTransform = false;
+			}
 
 			currentDestination = aiTransform.position;
 
@@ -297,9 +235,8 @@ namespace AIBehavior
 			ChangeActiveState(initialState);
 		}
 
-        private eBuffType[] keys;
-        bool blDelete = false;
-        public void Update()
+
+		public void Update()
 		{
 			if ( isActive && Time.timeScale > 0 )
 			{
@@ -325,84 +262,11 @@ namespace AIBehavior
 				{
 					currentState.HandleAction(this);
 				}
-
-
-                blDelete = false;
-                //处理buff
-                if (list_buff != null && list_buff.Count > 0)
-                {
-                    if (keys == null)
-                    {
-                        keys = new eBuffType[list_buff.Count];
-                        list_buff.Keys.CopyTo(keys, 0);
-                    }
-
-                    foreach (eBuffType buffType in keys)
-                    {
-                        BuffBase bb = list_buff[buffType];
-                        bb.onUpdate();
-                        bb.durationTime -= Time.deltaTime;
-                        if (bb.durationTime <= 0)
-                        {
-                            blDelete = true;
-                            list_buff.Remove(bb.buffType);
-                            bb.onExit();
-                        }
-                    }
-                    if (blDelete)
-                    {
-                        if (list_buff.Count > 0)
-                        {
-                            keys = new eBuffType[list_buff.Count];
-                            list_buff.Keys.CopyTo(keys, 0);
-                        }
-                        else {
-                            keys = null;
-                        }
-                    }
-                }
-            }
+			}
 		}
 
-        /// <summary>
-        /// 净化
-        /// </summary>
-        public void JingHua()
-        {
-            foreach (eBuffType buffType in keys)
-            {
-                BuffBase bb = list_buff[buffType];
-                if (bb.blDebuff)
-                {
-                    bb.onExit();
-                    list_buff.Remove(bb.buffType);
-                }
-            }
-        }
 
-        private void RemoveAllBuff()
-        {
-            if (list_buff != null)
-            {
-                foreach (BuffBase bi in list_buff.Values)
-                {
-                    bi.onExit();
-                }
-                list_buff.Clear();
-            }
-        }
-
-        public void AddBuff(BuffBase buff)
-        {
-            if (this.configuration.currentHealth <= 0)
-                return;
-            if (buff == null)
-                return;
-            if (buff.onEnert())
-                list_buff.Add(buff.buffType, buff);
-        }
-
-        Transform GetTransform()
+		Transform GetTransform()
 		{
 			if ( aiTransform == null )
 			{
@@ -429,45 +293,6 @@ namespace AIBehavior
 		{
 			this.isActive = isActive;
 		}
-
-		/// <summary>
-		/// Tells the AI that it got hit and it will subtract the amount of health passed from its' total health
-		/// </summary>
-		public void Damage(float damageValue, Vector3 damagePoint, IAlignmentProvider alignment)
-		{
-			// We don't want to enable this state if the FSM is dead
-			//GotHitState gotHitState = GetState<GotHitState>();
-
-			//if ( gotHitState != null && gotHitState.CanGetHit(this) )
-			//{
-				float totalDamage = damageValue * GetDamageMultiplier ();
-                //SubtractHealthValue(totalDamage);
-                this.TakeDamage(totalDamage, damagePoint, alignment);
-				Debug.Log ("Got " + totalDamage + " damage");
-
-				//if ( gotHitState.CoolDownFinished() )
-				//{
-				//	ChangeActiveState(gotHitState);
-				//}
-			//}
-		}
-
-        public void Cure(float addCureValue, Vector3 damagePoint, IAlignmentProvider alignment) {
-            this.TakeCure(addCureValue, damagePoint, alignment);
-        }
-
-
-        public virtual void SetDamageMultiplier (float newDamageMultiplier)
-		{
-			damageMultiplier = newDamageMultiplier;
-		}
-
-
-		public virtual float GetDamageMultiplier ()
-		{
-			return damageMultiplier;
-		}
-
 
 		// === GetStates === //
 
@@ -620,32 +445,15 @@ namespace AIBehavior
 			states[index] = newState;
 		}
 
-        /// <summary>
-        /// Add state 
-        /// </summary>
-        // <param name="newState">New state.</param>
-        public void AddSubTrigger(BaseState newState)
-        {
-            BaseState[] newSubStates = new BaseState[states.Length + 1];
 
-            for (int i = 0; i < states.Length; i++)
-            {
-                newSubStates[i] = states[i];
-            }
+		// === Change Current Active State === //
 
-            newSubStates[states.Length] = newState;
-
-            states = newSubStates;
-        }
-
-        // === Change Current Active State === //
-
-        /// <summary>
-        /// Force the AI to the specified state. Note that this state does NOT have to exist in the states array
-        /// </summary>
-        /// <param name="newState">New state.</param>
-        /// The 'onStateChanged' delegate is called at the end of this method
-        public void ChangeActiveState(BaseState newState)
+		/// <summary>
+		/// Force the AI to the specified state. Note that this state does NOT have to exist in the states array
+		/// </summary>
+		/// <param name="newState">New state.</param>
+		/// The 'onStateChanged' delegate is called at the end of this method
+		public void ChangeActiveState(BaseState newState)
 		{
 			if ( newState == null || !newState.CanSwitchToState())
 			{
@@ -702,29 +510,14 @@ namespace AIBehavior
 		}
 
 
-        private Vector3 prevPosition;
-        public void MoveAgentWithVector(Transform target, float targetSpeed, float rotationSpeed)
-        {   
-            Vector3 targetPoint = target.position;
-            currentDestination = targetPoint;
-            targetRotationPoint = targetPoint;
-            this.rotationSpeed = rotationSpeed;
-            transform.position = Vector3.MoveTowards(transform.position, target.position, targetSpeed*0.1f * Time.fixedDeltaTime);
-
-            if (externalMove != null)
-            {
-                externalMove(targetPoint, targetSpeed, rotationSpeed);
-            }
-        }
-
-        /// <summary>
-        /// Sets the movement and rotation targets and values
-        /// </summary>
-        /// <param name="target">Target.</param>
-        /// <param name="targetSpeed">Target speed.</param>
-        /// <param name="rotationSpeed">Rotation speed.</param>
-        public void MoveAgent(Transform target, float targetSpeed, float rotationSpeed)
-		{   
+		/// <summary>
+		/// Sets the movement and rotation targets and values
+		/// </summary>
+		/// <param name="target">Target.</param>
+		/// <param name="targetSpeed">Target speed.</param>
+		/// <param name="rotationSpeed">Rotation speed.</param>
+		public void MoveAgent(Transform target, float targetSpeed, float rotationSpeed)
+		{
 			if ( target != null )
 			{
 				RotateAgent(target, rotationSpeed);
@@ -733,17 +526,20 @@ namespace AIBehavior
 			MoveAgent(target.position, targetSpeed, rotationSpeed);
 		}
 
+        public void SetNavMeshAgentStoppingDistance(float distance) {
+            navMeshAgent.stoppingDistance = distance;
+        }
 
-		/// <summary>
-		/// Sets the movement and rotation targets and values
-		/// </summary>
-		/// <param name="targetPoint">Target point.</param>
-		/// <param name="targetSpeed">Target speed.</param>
-		/// <param name="rotationSpeed">Rotation speed.</param>
-		/// If there is a NavMeshAgent component its' speed, roation and destination will be handled automatically
-		/// If the 'externalMove' delegate is assigned it will be called at the end of the method
-		/// If both a NavMeshAgent component exists and the 'externalMove' delegate is assigned, both will be called
-		public void MoveAgent(Vector3 targetPoint, float targetSpeed, float rotationSpeed, Transform rotationTargetOverride = null)
+        /// <summary>
+        /// Sets the movement and rotation targets and values
+        /// </summary>
+        /// <param name="targetPoint">Target point.</param>
+        /// <param name="targetSpeed">Target speed.</param>
+        /// <param name="rotationSpeed">Rotation speed.</param>
+        /// If there is a NavMeshAgent component its' speed, roation and destination will be handled automatically
+        /// If the 'externalMove' delegate is assigned it will be called at the end of the method
+        /// If both a NavMeshAgent component exists and the 'externalMove' delegate is assigned, both will be called
+        public void MoveAgent(Vector3 targetPoint, float targetSpeed, float rotationSpeed, Transform rotationTargetOverride = null)
 		{
 			bool isNavAgent = navMeshAgent != null;
 
@@ -845,15 +641,15 @@ namespace AIBehavior
 				navMeshAgent.updateRotation = updateRot;
 			}
 		}
-         
 
-        /// <summary>
-        /// Tells the system to play an AIAnimationState
-        /// </summary>
-        /// <param name="animState">Animation state.</param>
-        /// If the 'onPlayAnimation' delegate is defined it will call that.\n
-        /// If 'onPlayAnimation' is not defined it will attempt to call the method 'animationCallbackMethodName' defined on the 'animationCallbackComponent'
-        public void PlayAnimation(AIAnimationState animState)
+
+		/// <summary>
+		/// Tells the system to play an AIAnimationState
+		/// </summary>
+		/// <param name="animState">Animation state.</param>
+		/// If the 'onPlayAnimation' delegate is defined it will call that.\n
+		/// If 'onPlayAnimation' is not defined it will attempt to call the method 'animationCallbackMethodName' defined on the 'animationCallbackComponent'
+		public void PlayAnimation(AIAnimationState animState)
 		{
 			if ( onPlayAnimation != null )
 			{
@@ -868,30 +664,15 @@ namespace AIBehavior
 			}
 		}
 
-        public void PlaySkill(SkillData skillState)
-        {
-            if (onPlaySkill != null)
-            {
-                onPlaySkill(skillState);
-            }
-            else if (skillCallbackComponent != null && skillState != null)
-            {
-                if (!string.IsNullOrEmpty(skillCallbackMethodName))
-                {
-                    skillCallbackComponent.SendMessage(skillCallbackMethodName, skillState);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the closest player found that is tagged with a tag in the playerTags array.
-        /// </summary>
-        /// <returns>The closest player.</returns>
-        /// Note that if the tagged GameObject was added after this AI was initialized it may not find it
-        /// - One solution is to call the CheckForPlayers method to refresh this list
-        /// - Another solution is to set the checkForPlayersInterval to something other than 0
-        /// - Idealy you want to call CheckForPlayers as little as possible as it has some performance implications.
-        public Transform GetClosestPlayer(Transform[] playerTransforms)
+		/// <summary>
+		/// Gets the closest player found that is tagged with a tag in the playerTags array.
+		/// </summary>
+		/// <returns>The closest player.</returns>
+		/// Note that if the tagged GameObject was added after this AI was initialized it may not find it
+		/// - One solution is to call the CheckForPlayers method to refresh this list
+		/// - Another solution is to set the checkForPlayersInterval to something other than 0
+		/// - Idealy you want to call CheckForPlayers as little as possible as it has some performance implications.
+		public Transform GetClosestPlayer(Transform[] playerTransforms)
 		{
 			float sqrDist;
 			return GetClosestPlayer(playerTransforms, out sqrDist);

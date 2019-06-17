@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QGame.Core.Event;
+using System;
 
 namespace Core.Economy
 {
@@ -11,11 +12,6 @@ namespace Core.Economy
         /// How much currency there currently is
         /// </summary>
         public int currentCurrency { get; private set; }
-
-        /// <summary>
-        /// Occurs when currency changed.
-        /// </summary>
-        public event Action currencyChanged;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Core.Economy.Currency" /> class.
@@ -67,10 +63,7 @@ namespace Core.Economy
             if (increment != 0)
             {
                 currentCurrency += increment;
-                if (currencyChanged != null)
-                {
-                    currencyChanged();
-                }
+                XEventBus.Instance.Post(EventId.CurrencyChanged, new XEventArgs(currentCurrency));
             }
         }
     }

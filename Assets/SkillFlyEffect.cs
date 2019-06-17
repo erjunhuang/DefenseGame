@@ -10,13 +10,14 @@ using UnityEngine;
 public class SkillFlyEffect : SkillBase
 {
     [HideInInspector]
-    public Vector3 vEnd;
-    private float distanceToTarget;
-    public override int AttachActor(AIBehaviors attacker, List<AIBehaviors> targets, List<DamageInfo> skillDamages)
+    public Vector3 targetable;
+
+    public SkillTargetEffect skillTargetEffect;
+    public override int AttachActor(LevelAgent attacker, List<LevelAgent> targets, List<DamageInfo> skillDamages)
     {
         base.AttachActor(attacker, targets, skillDamages);
-        vEnd = targets[0].transform.position;
-        distanceToTarget = Vector3.Distance(attacker.transform.position, vEnd);
+        targetable = targets[0].transform.position;
+
         if (skill_Effect != null) {
             UpdateEffect();
         }
@@ -27,8 +28,10 @@ public class SkillFlyEffect : SkillBase
     private void UpdateEffect()
     {
         flyEffect = Instantiate(skill_Effect);
-        flyEffect.transform.position = skillActor.transform.position;
+        flyEffect.transform.position = attacker.transform.position;
+        childIcon = flyEffect.transform.Find("Icon");
 
+        counter = 0;
         originPoint = myVirtualPosition = myPreviousPosition = flyEffect.transform.position;
         StartCoroutine(ShootLine());
     }
@@ -37,28 +40,44 @@ public class SkillFlyEffect : SkillBase
     private Vector3 originPoint, myVirtualPosition, myPreviousPosition;
     public float ballisticOffset = 0.5f;
     public float speedUpOverTime = 0.5f;
+    public float hitDistance = 0.2f;
+    private float counter;
+    public bool freezeRotation = false;
 
+
+    private Transform childIcon;
     IEnumerator ShootLine()
     {
         while (move)
         {
-            float originDistance = Vector3.Distance(flyEffect.transform.position, vEnd);
-            float distanceToAim = Vector3.Distance(myVirtualPosition, vEnd);
+            counter += Time.fixedDeltaTime;
+            // Add acceleration
+            speed += Time.fixedDeltaTime * speedUpOverTime;
 
-            //总路长/速度=时间
-            myVirtualPosition = Vector3.Lerp(flyEffect.transform.position, vEnd, GameManager.RealDeltaTime * speed);
+            // Calculate distance from firepoint to aim
+            Vector3 originDistance = targetable - originPoint;
+            // Calculate remaining distance
+            Vector3 distanceToAim = targetable - (Vector3)myVirtualPosition;
+            // Move towards aim
+            myVirtualPosition = Vector3.Lerp(originPoint, targetable, counter * speed / originDistance.magnitude);
+            // Add ballistic offset to trajectory
+            flyEffect.transform.position = AddBallisticOffset(originDistance.magnitude, distanceToAim.magnitude);
 
-            flyEffect.transform.position = AddBallisticOffset(originDistance, distanceToAim);
-
-            //LookAtDirection2D((Vector3)flyEffect.transform.position - myPreviousPosition);
+            // Rotate bullet towards trajectory
+            LookAtDirection2D((Vector3)flyEffect.transform.position - myPreviousPosition);
 
             myPreviousPosition = flyEffect.transform.position;
 
-            //if (distanceToAim.magnitude < 0.1f)
-            if (distanceToAim < 0.1f)
+            // Close enough to hit
+            if (distanceToAim.magnitude <= hitDistance)
             {
                 move = false;
                 GameObject.DestroyImmediate(flyEffect);
+                if (isOver!=null) {
+                    isOver(this);
+                }
+                skillTargetEffect.LoadSkill();
+                skillTargetEffect.DamageEnemy();
             }
             yield return null;
         }
@@ -66,8 +85,11 @@ public class SkillFlyEffect : SkillBase
 
     private void LookAtDirection2D(Vector3 direction)
     {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        if (freezeRotation == false)
+        {
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            childIcon.localRotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        }
     }
 
     private Vector3 AddBallisticOffset(float originDistance, float distanceToAim)
